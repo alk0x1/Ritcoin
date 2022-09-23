@@ -5,6 +5,15 @@ Basically I will read the Bitcoin paper and recreate using Rust, while I comment
 <b>Motivation: </b> Learn more about foundations of blockchain and sharp my skills in Rust.
 
 
+## Files
+1. Blocks
+- Merkle Tree
+- Block Struct
+- Header of Block Struct
+- Hash sha256
+2. Nodes
+- Setup 2 nodes who will communicate between each other
+
 ## Topics to be covered
 1 - Introduction <br />
 2 - Transactions <br />
@@ -18,3 +27,8 @@ Basically I will read the Bitcoin paper and recreate using Rust, while I comment
 10 - Privacy <br />
 11 - Calculations <br />
 12 - Conclusion <br />
+
+
+## How does a transactions get into the blockchain?
+
+## Proof of Work
