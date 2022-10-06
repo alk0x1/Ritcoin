@@ -1,9 +1,21 @@
 use sha2::{Digest, Sha256, digest::{generic_array::GenericArray, typenum::{UInt, UTerm, bit::{B1, B0}}}};
+use crate::block::Header;
 
 pub fn hash(data: &str) -> GenericArray<u8, UInt<UInt<UInt<UInt<UInt<UInt<UTerm, B1>, B0>, B0>, B0>, B0>, B0>> {
   let mut hasher = Sha256::new();
   hasher.update(data);
   return hasher.finalize();
+}
+
+pub fn hash_block(block_header: &Header) -> String {
+  let nonce = block_header.nonce.to_string();
+  let previous_hash = block_header.previous_hash.clone();
+  let version = block_header.version.to_string();
+
+  let mut to_be_hashed = concat_strings(version, previous_hash);
+  to_be_hashed = concat_strings(to_be_hashed, nonce);
+
+  return hex::encode(hash(&to_be_hashed));
 }
 
 pub fn concat_strings(string1: String, string2: String) -> String {
@@ -16,20 +28,22 @@ pub fn concat_strings(string1: String, string2: String) -> String {
 
 pub fn validated_hash(hash: String, difficulty: usize, prefix: String) -> bool {
   let check = prefix.repeat(difficulty);
-  println!("hash.starts: {}", hash);
+  // println!("hash.starts: {}", hash);
   return hash.starts_with(&check);
 }
 // workaround to get element from string vector without ownership problems
-pub fn get_string_vec_content(vec: Vec<String>, index: usize) -> String {
-  let args = vec;
-  let ref dir = **&args[index];
-  return String::from(dir);
-}
+// pub fn get_string_vec_content(vec: Vec<String>, index: usize) -> String {
+//   let args = vec;
+//   let ref dir = **&args[index];
+//   return String::from(dir);
+// }
 
 pub fn print_menu() {
   println!("-------------------------------------");
 	println!("1. Create transaction");
-	println!("2. Create block with the first 15 transactions");
+	println!("2. Insert a new test block in the blockchain");
+	println!("3. Show all the blocks hashes");
+	println!("4. Show all transactions signatures");
 	println!("9. Show this menu again");
 	println!("-------------------------------------");
 }

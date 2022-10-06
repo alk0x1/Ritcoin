@@ -1,18 +1,26 @@
 use crate::block::{Block, Header};
-use crate::utils::{self, validated_hash, hash};
+use crate::transactions::{Transaction, self};
+use crate::utils::{self, validated_hash};
 
+/*                TODO 
+* - create a function to hash a entire block ✔️
+* - implement command to print all block hashes in the blockchain ✔️
+* - create a method to add transactions in a block
+* - improve the types of the structure fields to limit the bytes
+*/
 pub struct Blockchain {
-  pub blocks: Vec<Block>
+  pub blocks: Vec<Block>,
+  pub transactions_pool: Vec<Transaction>
 }
 
-// create a function to hash a entire block
 impl Blockchain {
   pub fn new() -> Self {
     Blockchain { 
-      blocks: vec![],
+      blocks: Vec::new(),
+      transactions_pool: Vec::new()
     }
-    
   }
+
   pub fn insert_new_block(&mut self) {
     if self.blocks.len() < 1 {
       let genesis_block = self.create_genesis_block();
@@ -21,17 +29,41 @@ impl Blockchain {
       println!("Genesis block created");
     }
 
-    let previous_hash = self.get_last_hash();
-    let mut test_transactions_vec: Vec<String> = Vec::new();
-    test_transactions_vec.push(String::from("0"));
-    let nonce = self.proof_of_work(previous_hash.clone());
+    let previous_hash = self.get_last_block_hash();
+    // let mut test_transactions_vec: Vec<String> = Vec::new();
+    // test_transactions_vec.push(String::from("0"));
+    let version = 1;
+    let nonce = self.proof_of_work(previous_hash.clone(), version.clone());
 
-    let to_be_hashed = utils::concat_strings(previous_hash.clone(), String::from(nonce.to_string()));
+    let header = &Header {
+      previous_hash: previous_hash.clone(),
+      nonce,
+      version
+    };
+
     println!("previous_hash.clone(): {} | nonce.to_string(): {}", previous_hash.clone(), nonce.to_string());
 
-    let new_block = Block::new(0, test_transactions_vec, previous_hash, nonce);
-    let new_block_hash = hex::encode(utils::hash(&to_be_hashed));
-    let block_validated = utils::validated_hash(new_block_hash.clone(), 3, String::from("0"));
+    // let new_block = Block::new(header, self.transactions_pool);
+
+    let mut copy_vec: Vec<Transaction> = Vec::new();
+    let mut i = 0;
+    
+    while i < self.transactions_pool.len() {
+      let copy_transaction: Transaction = Transaction {
+        input_counter: 1,
+        signature: String::from("a"),
+        version: 1
+      };
+      copy_vec.push(copy_transaction);
+
+      i = i + 1;
+    }
+    
+    let new_block = Block::new(header, copy_vec);
+
+    
+    let new_block_hash = utils::hash_block(header);
+    let block_validated = utils::validated_hash(new_block_hash.clone(), 2, String::from("0"));
 
     if block_validated {
       self.blocks.push(new_block);
@@ -40,7 +72,7 @@ impl Blockchain {
     }
   }
 
-  pub fn get_last_hash(&mut self) -> String {
+  pub fn get_last_block_hash(&mut self) -> String {
     let nonce = self.blocks[self.blocks.len() - 1].header.nonce.to_string();
     let previous_hash = self.blocks[self.blocks.len() - 1].header.previous_hash.to_string();
     let last_hash = utils::concat_strings(nonce, previous_hash);
@@ -49,12 +81,18 @@ impl Blockchain {
   }
 
 	pub fn create_genesis_block(&mut self) -> Block {
-		let mut fake_transactions: Vec<String> = Vec::new();
-    fake_transactions.push(String::from("a"));
+		let mut fake_transactions: Vec<Transaction> = Vec::new();
+    let new_fake_transaction: Transaction = Transaction {
+      version: 1,
+      input_counter: 0,
+      signature: String::from("")
+    };
+
+    fake_transactions.push(new_fake_transaction);
 
     let genesis_block_header: Header = Header { 
 			version: 1,
-			previous_hash: String::from("00"),
+			previous_hash: String::from(""),
       nonce: 1
 			// timestamp: String::from("00"),
 			// merkle_root: String::from("00"),
@@ -70,22 +108,36 @@ impl Blockchain {
 		return genesis_block;
 	}
   
-	pub fn proof_of_work(&mut self, previous_hash: String) -> i32 {
-		let mut nonce: i32 = 0;
-
+	pub fn proof_of_work(&mut self, previous_hash: String, version: usize) -> i32 {
+    let mut nonce: i32 = 0;
+    
     loop {
       let prefix = String::from("0");
-      let nonce_string = String::from(nonce.to_string());
+      let header = &Header { 
+        version, 
+        previous_hash: previous_hash.clone(),
+        nonce
+      };
+      
+      let hashed_with_nonce = utils::hash_block(header);
 
-      let to_be_hashed_with_nonce = utils::concat_strings(previous_hash.clone(), nonce_string);
-
-      let hashed_with_nonce = hex::encode(utils::hash(&to_be_hashed_with_nonce));
-     
       if validated_hash(hashed_with_nonce.clone(), 3, prefix) {
         println!("nonce {} validated: {}", nonce, hashed_with_nonce);
         return nonce;
       }
       nonce = nonce + 1;
+    }
+  }
+
+  pub fn show_all_block_hashes(&mut self) {
+    for (i, block) in self.blocks.iter().enumerate() {
+      println!("block {}: {}", i, utils::hash_block(&block.header));
+    }
+  }
+
+  pub fn show_all_transactions(&mut self) {
+    for (i, transaction) in self.transactions_pool.iter().enumerate() {
+      println!("transaction {}: {}", i, &transaction.signature);
     }
   }
 

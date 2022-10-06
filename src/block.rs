@@ -1,10 +1,12 @@
-use crate::transactions;
-use crate::utils;
+use std::clone;
+
+use crate::transactions::{self, Transaction};
+// use crate::utils;
 extern crate hex;
 
 #[derive(Debug)]
 pub struct Header {
-	pub version: i32,
+	pub version: usize,
 	pub previous_hash: String,
 	pub nonce: i32
 	// timestamp: String,
@@ -16,22 +18,23 @@ pub struct Block {
 	pub header: Header,
 	// size: f32,
 	pub transactions_counter: usize,
-	pub transactions: Vec<String>
+	pub transactions: Vec<Transaction>
 }
 // Modify that later to have only a new() method and 
 // create the genesis block in Blockchain class
 impl Block {
-	pub fn new(transactions_counter: usize, transactions: Vec<String>, previous_hash: String, nonce: i32) -> Self {
-		let mut header = Header {
-			version: 1,
-			previous_hash,
-			nonce
+	pub fn new(header: &Header, transactions: Vec<Transaction>) -> Self {
+		let header = Header {
+			version: header.version,
+			previous_hash: header.previous_hash.clone(),
+			nonce: header.nonce
 		};
 
 		Block {
 			header,
-			transactions_counter,
-			transactions
+			transactions_counter: 0,
+			transactions: Vec::new()
 		}
 	}
+
 }
