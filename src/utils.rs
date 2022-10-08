@@ -1,3 +1,5 @@
+use std::io::stdin;
+
 use sha2::{Digest, Sha256, digest::{generic_array::GenericArray, typenum::{UInt, UTerm, bit::{B1, B0}}}};
 use crate::block::Header;
 
@@ -47,3 +49,17 @@ pub fn print_menu() {
 	println!("9. Show this menu again");
 	println!("-------------------------------------");
 }
+
+// pub fn interact_with_menu() -> usize {
+//   let mut option = String::new();
+//   let mut parsed: usize = 00;
+//   while option.trim_end() != String::from("00") {
+//     option = String::from("");
+//     stdin().read_line(&mut option).expect("failed to readline");
+//     parsed = match option.trim_end().parse::<usize>() {
+//       Ok(value) => value,
+//       Err(_) => 00
+//     };
+//   }
+//   parsed
+// }

@@ -1,5 +1,5 @@
 use crate::block::{Block, Header};
-use crate::transactions::{Transaction, self};
+use crate::transactions::Transaction;
 use crate::utils::{self, validated_hash};
 
 /*                TODO 
@@ -47,12 +47,11 @@ impl Blockchain {
 
     let mut copy_vec: Vec<Transaction> = Vec::new();
     let mut i = 0;
-    
     while i < self.transactions_pool.len() {
       let copy_transaction: Transaction = Transaction {
-        input_counter: 1,
-        signature: String::from("a"),
-        version: 1
+        input_counter: self.transactions_pool[i].input_counter,
+        signature: self.transactions_pool[i].signature.clone(),
+        version: self.transactions_pool[i].version
       };
       copy_vec.push(copy_transaction);
 
@@ -60,8 +59,6 @@ impl Blockchain {
     }
     
     let new_block = Block::new(header, copy_vec);
-
-    
     let new_block_hash = utils::hash_block(header);
     let block_validated = utils::validated_hash(new_block_hash.clone(), 2, String::from("0"));
 
@@ -135,10 +132,25 @@ impl Blockchain {
     }
   }
 
+  pub fn show_block_info(&mut self, index: usize) {
+    if index == 00 {
+      println!("Not a valid index {}", index);
+    }
+    println!("block {}: {:?}", index, self.blocks[index]);
+  }
+
+
   pub fn show_all_transactions(&mut self) {
     for (i, transaction) in self.transactions_pool.iter().enumerate() {
       println!("transaction {}: {}", i, &transaction.signature);
     }
+  }
+
+  pub fn show_transaction_info(&mut self, index: usize) {
+    if index == 00 {
+      println!("Not a valid index {}", index);
+    }
+    println!("transaction {}: {:?}", index, self.transactions_pool[index]);
   }
 
 }

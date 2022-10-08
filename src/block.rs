@@ -1,6 +1,4 @@
-use std::clone;
-
-use crate::transactions::{self, Transaction};
+use crate::transactions::Transaction;
 // use crate::utils;
 extern crate hex;
 
@@ -33,7 +31,7 @@ impl Block {
 		Block {
 			header,
 			transactions_counter: 0,
-			transactions: Vec::new()
+			transactions
 		}
 	}
 

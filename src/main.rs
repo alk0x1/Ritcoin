@@ -1,4 +1,4 @@
-use std::io::stdin;
+use std::{io::stdin, option};
 
 use transactions::Transaction;
 mod block;
@@ -7,52 +7,75 @@ mod utils;
 mod transactions;
 
 
-// put all transactions in a mem-pool as pending
-// broadcast to all nodes that will validate and put new transactions into a block
-// start to solve the puzzle
+// // put all transactions in a mem-pool as pending
+// // broadcast to all nodes that will validate and put new transactions into a block
+// // start to solve the puzzle
 
-// 1) New transactions are broadcast to all nodes.
-// 2) Each node collects new transactions into a block.
-// 3) Each node works on finding a difficult proof-of-work for its block.
-// 4) When a node finds a proof-of-work, it broadcasts the block to all nodes.
-// 5) Nodes accept the block only if all transactions in it are valid and not already spent.
-// 6) Nodes express their acceptance of the block by working on creating the next block in the
-// chain, using the hash of the accepted block as the previous hash.
+// // 1) New transactions are broadcast to all nodes.
+// // 2) Each node collects new transactions into a block.
+// // 3) Each node works on finding a difficult proof-of-work for its block.
+// // 4) When a node finds a proof-of-work, it broadcasts the block to all nodes.
+// // 5) Nodes accept the block only if all transactions in it are valid and not already spent.
+// // 6) Nodes express their acceptance of the block by working on creating the next block in the
+// // chain, using the hash of the accepted block as the previous hash.
 
 
 fn main() {
 	utils::print_menu();
-	let mut option = String::new();
+	let mut option1 = String::new();
 	let mut new_blockchain = blockchain::Blockchain::new();
 
 	loop {
-		stdin().read_line(&mut option).expect("failed to readline");
+		if option1 == String::from("") {
+			stdin().read_line(&mut option1).expect("failed to readline");
+		}
 		
-		if option.trim_end() == String::from("9") {
+		if option1.trim_end() == String::from("9") {
 			utils::print_menu();
 		}
 
-		if option.trim_end() == String::from("1") {
+		if option1.trim_end() == String::from("1") {
 			let new_transaction = transactions::Transaction::new(1, 0, String::from("SIGNATURE_TEST"));
 			new_blockchain.transactions_pool.push(new_transaction);
 
 			println!("transaction: {:?}", new_blockchain.transactions_pool[new_blockchain.transactions_pool.len() - 1]);
 		}
 		
-		if option.trim_end() == String::from("2") {
+		if option1.trim_end() == String::from("2") {
 			new_blockchain.insert_new_block();
 		}
 		
-		if option.trim_end() == String::from("3") {
+		if option1.trim_end() == String::from("3") {
+			println!("Press the correspondent number to see more details or 00 to go back");
 			new_blockchain.show_all_block_hashes();
+			
+			let mut option2 = String::new();
+			while option2.trim_end() != String::from("00") {
+				option2 = String::from("");
+				stdin().read_line(&mut option2).expect("failed to readline");
+				let parsed: usize = match option2.trim_end().parse::<usize>() {
+					Ok(value) => value,
+					Err(_) => 00
+				};
+				new_blockchain.show_block_info(parsed);
+			}
 		}
-
-		if option.trim_end() == String::from("4") {
+		if option1.trim_end() == String::from("4") {
+		  println!("Press the correspondent number to see more details or 00 to go back");
 			new_blockchain.show_all_transactions();
+			
+			let mut option2 = String::new();
+			while option2.trim_end() != String::from("00") {
+				option2 = String::from("");
+				stdin().read_line(&mut option2).expect("failed to readline");
+				let parsed: usize = match option2.trim_end().parse::<usize>() {
+					Ok(value) => value,
+					Err(_) => 00
+				};
+				new_blockchain.show_transaction_info(parsed);
+			}
 		}
 
-		option = String::from("");
-
-		// let new_block = block::Block::new(1, 15, pseudo_transactions);
+		option1 = String::from("");
 	}
 }
