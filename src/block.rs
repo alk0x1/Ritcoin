@@ -34,5 +34,4 @@ impl Block {
 			transactions
 		}
 	}
-
 }

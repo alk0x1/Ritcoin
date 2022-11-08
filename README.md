@@ -35,7 +35,8 @@ Basically I will read the Bitcoin paper and recreate using Rust, while I comment
 
 
 
-
+### Roadmap
+Turn this in a official blockchain for the web3dev Discord group
 
 
 <!-- Users submit pending transaction orders. These orders get disseminated to all miners.

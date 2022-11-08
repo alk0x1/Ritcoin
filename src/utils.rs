@@ -50,6 +50,10 @@ pub fn print_menu() {
 	println!("-------------------------------------");
 }
 
+pub fn mount_transaction_menu() {
+  
+}
+
 // pub fn interact_with_menu() -> usize {
 //   let mut option = String::new();
 //   let mut parsed: usize = 00;

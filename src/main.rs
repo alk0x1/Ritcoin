@@ -6,20 +6,6 @@ mod blockchain;
 mod utils;
 mod transactions;
 
-
-// // put all transactions in a mem-pool as pending
-// // broadcast to all nodes that will validate and put new transactions into a block
-// // start to solve the puzzle
-
-// // 1) New transactions are broadcast to all nodes.
-// // 2) Each node collects new transactions into a block.
-// // 3) Each node works on finding a difficult proof-of-work for its block.
-// // 4) When a node finds a proof-of-work, it broadcasts the block to all nodes.
-// // 5) Nodes accept the block only if all transactions in it are valid and not already spent.
-// // 6) Nodes express their acceptance of the block by working on creating the next block in the
-// // chain, using the hash of the accepted block as the previous hash.
-
-
 fn main() {
 	utils::print_menu();
 	let mut option1 = String::new();

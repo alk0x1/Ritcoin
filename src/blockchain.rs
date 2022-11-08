@@ -5,8 +5,9 @@ use crate::utils::{self, validated_hash};
 /*                TODO 
 * - create a function to hash a entire block ✔️
 * - implement command to print all block hashes in the blockchain ✔️
-* - create a method to add transactions in a block
+* - create a method to add transactions in a block 
 * - improve the types of the structure fields to limit the bytes
+* - put real transactions in
 */
 pub struct Blockchain {
   pub blocks: Vec<Block>,
@@ -104,7 +105,7 @@ impl Blockchain {
 
 		return genesis_block;
 	}
-  
+
 	pub fn proof_of_work(&mut self, previous_hash: String, version: usize) -> i32 {
     let mut nonce: i32 = 0;
     

@@ -15,17 +15,18 @@ pub struct Transaction {
 }
 
 pub struct Output {
-  amount: usize,
-  locking_script_size: usize,
-  // locking_script: nao_sei_o_tipo_aqui_n
+  amount: usize,                  // Bitcoin value in satoshis (10-8 bitcoin)
+  locking_script_size: usize,     // Locking-Script length in bytes, to follow
+  // locking_script: any          // A script defining the conditions needed to spend the output
 }
 
+// The unlocking script is usually a signature proving ownership of the bitcoin address that is in the locking script.
 pub struct Input {
-  transaction_hash: String,
-  output_index: usize,
-  unlocking_script_size: usize,
-  // unlocking_script: nao_sei_o_tipo_aqui_tbm,
-  sequence_number: usize
+  transaction_hash: String,        // Pointer to the transaction containing the UTXO to be spent
+  output_index: usize,             // The index number of the UTXO to be spent; first one is 0
+  // unlocking_script_size: usize, // Unlocking-Script length in bytes, to follow
+  // unlocking_script: any,        // A script that fulfills the conditions of the UTXO locking script.
+  sequence_number: usize           // Currently disabled Tx-replacement feature, set to 0xFFFFFFFF
 }
 
 impl Transaction {
@@ -54,6 +55,14 @@ impl Transaction {
 		} else {
       return Self::new_pseudo_hash();
     }
+  }
+
+  pub fn new_transaction_input() {
+
+  }
+
+  pub fn new_transaction_output() {
+    
   }
 
 }
