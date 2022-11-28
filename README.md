@@ -28,17 +28,6 @@ Basically I will read the Bitcoin paper and recreate using Rust, while I comment
 11 - Calculations <br />
 12 - Conclusion <br />
 
-
-## How does a transactions get into the blockchain?
-
-## Proof of Work 
-
-
-
-### Roadmap
-Turn this in a official blockchain for the web3dev Discord group
-
-
 <!-- Users submit pending transaction orders. These orders get disseminated to all miners.
 
 Every miner assembles pending transactions into a block and starts solving a computational puzzle for this block. If the miner is successful to be the first guy to solve the problem, her block is committed to the chain and the miner is paid 2 ETH plus collects the sum all of all transaction fees in the block (which recently can be as high as another 2 ETH) -->
