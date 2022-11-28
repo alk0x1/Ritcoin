@@ -14,6 +14,10 @@ pub struct Transaction {
   // locktime: Date
 }
 
+// how to implement locking_script
+// basically the script is writted using opcodes.
+// but for this I can just use Rust
+
 pub struct Output {
   amount: usize,                  // Bitcoin value in satoshis (10-8 bitcoin)
   locking_script_size: usize,     // Locking-Script length in bytes, to follow
@@ -59,7 +63,7 @@ impl Transaction {
 
   pub fn new_transaction_input() {
 
-  }
+  } 
 
   pub fn new_transaction_output() {
     

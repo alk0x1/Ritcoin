@@ -1,10 +1,12 @@
 use std::{io::stdin, option};
 
 use transactions::Transaction;
+use wallets::{create_wallet};
 mod block;
 mod blockchain;
 mod utils;
 mod transactions;
+mod wallets;
 
 fn main() {
 	utils::print_menu();
@@ -60,6 +62,10 @@ fn main() {
 				};
 				new_blockchain.show_transaction_info(parsed);
 			}
+		}
+		if option1.trim_end() == String::from("5") {
+			create_wallet();
+			// test_hash();
 		}
 
 		option1 = String::from("");

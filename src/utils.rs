@@ -46,6 +46,7 @@ pub fn print_menu() {
 	println!("2. Insert a new test block in the blockchain");
 	println!("3. Show all the blocks hashes");
 	println!("4. Show all transactions signatures");
+	println!("5. Create Ritcoin Wallet");
 	println!("9. Show this menu again");
 	println!("-------------------------------------");
 }
