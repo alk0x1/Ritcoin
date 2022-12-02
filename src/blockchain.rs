@@ -140,7 +140,6 @@ impl Blockchain {
     println!("block {}: {:?}", index, self.blocks[index]);
   }
 
-
   pub fn show_all_transactions(&mut self) {
     for (i, transaction) in self.transactions_pool.iter().enumerate() {
       println!("transaction {}: {}", i, &transaction.signature);

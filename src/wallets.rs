@@ -16,6 +16,7 @@ pub fn create_wallet() {
   assert_eq!(priv_key, decoded_private_key);
 
   save_keys_on_file(encoded_public_key, encoded_private_key);
+  println!("Save keys on ./src/wallets");
 }
 
 pub fn encode_keys_pkcs8(pubkey: RsaPublicKey, privkey: RsaPrivateKey) -> (String, Zeroizing<String>) {
@@ -33,8 +34,8 @@ pub fn decode_keys_pkcs8(pubpem: String, privpem: Zeroizing<String>) -> (RsaPubl
 }
 
 pub fn save_keys_on_file(pubkey: String, privkey: Zeroizing<String>) {
-  let mut pub_file = File::create("./wallets/public.txt").unwrap();
-  let mut priv_file = File::create("./wallets/secret.txt").unwrap();
+  let mut pub_file = File::create("src/wallets/public.txt").unwrap();
+  let mut priv_file = File::create("src/wallets/secret.txt").unwrap();
   pub_file.write_all(pubkey.as_bytes()).unwrap();
   priv_file.write_all(privkey.as_bytes()).unwrap();
 }
