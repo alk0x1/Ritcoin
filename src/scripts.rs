@@ -11,7 +11,6 @@ pub fn locking_script() {
 }
 
 pub fn unlocking_script() {
-  
 }
 
 struct Stack<T> {

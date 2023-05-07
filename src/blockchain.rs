@@ -2,13 +2,7 @@ use crate::block::{Block, Header};
 use crate::transactions::Transaction;
 use crate::utils::{self, validated_hash};
 
-/*                TODO 
-* - create a function to hash a entire block ✔️
-* - implement command to print all block hashes in the blockchain ✔️
-* - create a method to add transactions in a block 
-* - improve the types of the structure fields to limit the bytes
-* - put real transactions in
-*/
+
 pub struct Blockchain {
   pub blocks: Vec<Block>,
   pub transactions_pool: Vec<Transaction>
@@ -21,7 +15,7 @@ impl Blockchain {
       transactions_pool: Vec::new()
     }
   }
-
+ 
   pub fn insert_new_block(&mut self) {
     if self.blocks.len() < 1 {
       let genesis_block = self.create_genesis_block();
