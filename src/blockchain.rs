@@ -38,20 +38,9 @@ impl Blockchain {
 
     println!("previous_hash.clone(): {} | nonce.to_string(): {}", previous_hash.clone(), nonce.to_string());
 
-    // let new_block = Block::new(header, self.transactions_pool);
+     let copy_vec: Vec<Transaction> = self.transactions_pool.iter().cloned().collect();
 
-    let mut copy_vec: Vec<Transaction> = Vec::new();
-    let mut i = 0;
-    while i < self.transactions_pool.len() {
-      let copy_transaction: Transaction = Transaction {
-        input_counter: self.transactions_pool[i].input_counter,
-        signature: self.transactions_pool[i].signature.clone(),
-        version: self.transactions_pool[i].version
-      };
-      copy_vec.push(copy_transaction);
 
-      i = i + 1;
-    }
     
     let new_block = Block::new(header, copy_vec);
     let new_block_hash = utils::hash_block(header);
@@ -73,28 +62,25 @@ impl Blockchain {
   }
 
 	pub fn create_genesis_block(&mut self) -> Block {
-		let mut fake_transactions: Vec<Transaction> = Vec::new();
-    let new_fake_transaction: Transaction = Transaction {
-      version: 1,
-      input_counter: 0,
-      signature: String::from("")
-    };
+    let value = 50; // genesis block reward value
+    let script_pubkey = String::from("genesis_address");
 
-    fake_transactions.push(new_fake_transaction);
+    let txid = Transaction::new_pseudo_hash();
+
+    let coinbase_tx = Transaction::coinbase(txid, value, script_pubkey.clone()).txid;
+
+    let genesis_transaction = Transaction::coinbase(coinbase_tx, value, script_pubkey);
 
     let genesis_block_header: Header = Header { 
 			version: 1,
-			previous_hash: String::from(""),
-      nonce: 1
-			// timestamp: String::from("00"),
-			// merkle_root: String::from("00"),
-			// difficulty: 1,
+			previous_hash: String::from("0"),
+      nonce: 0
 		};
+
 		let genesis_block: Block = Block { 
 			header: genesis_block_header,
-			// size: 0.0,
 			transactions_counter: 0,
-			transactions: fake_transactions
+			transactions: vec![genesis_transaction]
 		};
 
 		return genesis_block;
@@ -106,7 +92,8 @@ impl Blockchain {
     loop {
       let prefix = String::from("0");
       let header = &Header { 
-        version, 
+   
+     version, 
         previous_hash: previous_hash.clone(),
         nonce
       };
@@ -136,7 +123,7 @@ impl Blockchain {
 
   pub fn show_all_transactions(&mut self) {
     for (i, transaction) in self.transactions_pool.iter().enumerate() {
-      println!("transaction {}: {}", i, &transaction.signature);
+      println!("transaction {}: {}", i, &transaction.txid);
     }
   }
 
@@ -146,5 +133,13 @@ impl Blockchain {
     }
     println!("transaction {}: {:?}", index, self.transactions_pool[index]);
   }
+
+  pub fn insert_transaction_in_pool(&mut self, transaction: Transaction) {
+    self.transactions_pool.push(transaction);
+    println!("transactions_pool: {:?}", self.transactions_pool);
+  }
+
+
+
 
 }

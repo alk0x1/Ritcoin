@@ -9,6 +9,13 @@ pub fn hash(data: &str) -> GenericArray<u8, UInt<UInt<UInt<UInt<UInt<UInt<UTerm,
   return hasher.finalize();
 }
 
+pub fn hash_Vec_u8(data: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    let result = hasher.finalize();
+    hex::encode(result)
+}
+
 pub fn hash_block(block_header: &Header) -> String {
   let nonce = block_header.nonce.to_string();
   let previous_hash = block_header.previous_hash.clone();
@@ -51,9 +58,6 @@ pub fn print_menu() {
 	println!("-------------------------------------");
 }
 
-pub fn mount_transaction_menu() {
-  
-}
 
 // pub fn interact_with_menu() -> usize {
 //   let mut option = String::new();

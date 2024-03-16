@@ -4,6 +4,7 @@ use rsa::{RsaPrivateKey, RsaPublicKey};
 use std::fs::File;
 use std::io::prelude::*;
 
+
 pub fn create_wallet() {
   let mut rng = rand::thread_rng();
   let bits = 2048;
@@ -39,3 +40,4 @@ pub fn save_keys_on_file(pubkey: String, privkey: Zeroizing<String>) {
   pub_file.write_all(pubkey.as_bytes()).unwrap();
   priv_file.write_all(privkey.as_bytes()).unwrap();
 }
+
