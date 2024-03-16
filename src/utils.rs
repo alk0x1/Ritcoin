@@ -35,6 +35,16 @@ pub fn concat_strings(string1: String, string2: String) -> String {
   return owned_string;
 }
 
+use serde_json::Result;
+use hex::encode;
+
+pub fn serialize_byte_array_to_json(byte_array: [u8; 33]) -> Result<String> {
+    let hex_str = encode(byte_array);
+    let json_str = serde_json::to_string(&hex_str)?;
+
+    Ok(json_str)
+}
+
 pub fn validated_hash(hash: String, difficulty: usize, prefix: String) -> bool {
   let check = prefix.repeat(difficulty);
   // println!("hash.starts: {}", hash);

@@ -1,5 +1,6 @@
 use std::{io::{stdin, stdout, Write}, option};
 
+use blockchain::Blockchain;
 use transactions::Transaction;
 
 use crate::transactions::{Input, UTXO};
@@ -70,14 +71,11 @@ fn main() {
 		if option1.trim_end() == String::from("5") {
 			let wallet = Wallet::new();
 			println!("New wallet generated: {:?}", wallet);
-
-			// Save to a file
-			let filename = "wallet.json";
-			wallet.save(filename).expect("Failed to save the wallet");
+			wallet.save("wallet_testt.json");
 
 			// Load from the file
-			let loaded_wallet = Wallet::load(filename).expect("Failed to load the wallet");
-			println!("Wallet loaded: {:?}", loaded_wallet);			// test_hash();
+			// let loaded_wallet = Wallet::load(filename).expect("Failed to load the wallet");
+			// println!("Wallet loaded: {:?}", loaded_wallet);			// test_hash();
 			}
 
 		option1 = String::from("");
@@ -85,7 +83,7 @@ fn main() {
 }
 
 
-fn mount_transaction_menu(blockchain: &mut blockchain::Blockchain) {
+fn mount_transaction_menu(blockchain: &mut Blockchain) {
  // Initialize an empty string to hold user input
     let mut sender = String::new();
     let mut recipient = String::new();
@@ -144,3 +142,75 @@ fn mount_transaction_menu(blockchain: &mut blockchain::Blockchain) {
 		// Insert in pool
 		blockchain.insert_transaction_in_pool(transaction);
 }
+
+
+// fn mount_wallet_menu(blockchain: &mut Blockchain) {
+//   // Initialize an empty string to hold user input and a variable for selection
+//   let mut selection = String::new();
+
+//   println!("Wallet Management");
+//   println!("1. Create new wallet");
+//   println!("2. Display wallet balance");
+//   println!("3. Export wallet keys");
+//   println!("4. Import wallet keys");
+//   println!("Please enter your choice:");
+
+//   stdout().flush().unwrap();  // Ensure the prompt is displayed immediately
+//   stdin().read_line(&mut selection).expect("Failed to read line");
+//   let selection = selection.trim().to_string();  // Trim any trailing newline characters
+
+//   match selection.as_str() {
+//     "1" => {
+//       // Create a new wallet instance
+//       let wallet = Wallet::new();
+//       println!("New wallet created.");
+//       println!("Public Key: {:?}", wallet.public_key);
+//       wallet.add_wallet(wallet);
+//     },
+//     "2" => {
+//       // Prompt for public key to identify the wallet
+//       println!("Enter wallet's public key:");
+//       let mut pub_key = String::new();
+//       stdout().flush().unwrap();
+//       stdin().read_line(&mut pub_key).expect("Failed to read line");
+//       let pub_key = pub_key.trim().to_string();
+
+//       // Display the balance
+//       if let Some(wallet) = blockchain.find_wallet_by_public_key(&pub_key) {
+//         println!("Balance for {}: {}", pub_key, blockchain.get_wallet_balance(&wallet));
+//       } else {
+//         println!("Wallet not found.");
+//       }
+//     },
+//     "3" => {
+//       // Exporting wallet keys (public and private)
+//       println!("Enter wallet's public key for export:");
+//       let mut pub_key = String::new();
+//       stdout().flush().unwrap();
+//       stdin().read_line(&mut pub_key).expect("Failed to read line");
+//       let pub_key = pub_key.trim().to_string();
+
+//       if let Some(wallet) = blockchain.find_wallet_by_public_key(&pub_key) {
+//         println!("Exporting keys for wallet: {}", pub_key);
+//         println!("Public Key: {}", wallet.public_key);
+//         println!("Private Key: {}", wallet.secret_key);
+//       } else {
+//         println!("Wallet not found.");
+//       }
+//     },
+//     "4" => {
+//       // Importing a wallet requires entering a secret key
+//       println!("Enter your secret key:");
+//       let mut secret_key = String::new();
+//       stdout().flush().unwrap();
+//       stdin().read_line(&mut secret_key).expect("Failed to read line");
+//       let secret_key = secret_key.trim().to_string();
+
+//       // Ideally, you would validate the secret key format here
+//       let wallet = Wallet::import_from_secret_key(&secret_key);
+//       println!("Wallet imported with public key: {}", wallet.public_key);
+//       blockchain.add_wallet(wallet);
+//     },
+//     _ => println!("Invalid selection."),
+//   }
+// }

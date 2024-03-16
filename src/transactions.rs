@@ -1,4 +1,5 @@
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 extern crate hex;
 use crate::utils;
 
@@ -9,7 +10,7 @@ pub struct Transaction {
   pub outputs: Vec<UTXO>
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct UTXO {
   pub txid: String,
   pub index: i32,

@@ -1,19 +1,21 @@
 extern crate secp256k1;
 extern crate rand;
-extern crate serde_json;
-
+extern crate serde;
 use rand::{rngs::OsRng, RngCore};
 use secp256k1::{Secp256k1, SecretKey, PublicKey};
-use std::collections::HashSet;
+use std::{collections::HashSet, fs::{self, File}, io::Write, path::Path};
+use crate::{transactions::{Input, Transaction, UTXO}, utils};
+use serde::ser::{SerializeStruct, Serializer};
+use serde::{Deserialize, Serialize};
+use hex::encode;
 
-use crate::transactions::{Input, Transaction, UTXO};
 
+#[derive(Debug)]
 pub struct Wallet {
-  secret_key: SecretKey,
-  public_key: PublicKey,
-  utxos: HashSet<UTXO>,
+  pub secret_key: SecretKey,
+  pub public_key: PublicKey,
+  pub utxos: HashSet<UTXO>,
 }
-
 impl Wallet {
   pub fn new() -> Self {
     let secp = Secp256k1::new();  // Creating a new secp256k1 context; used for signing and verification
@@ -30,6 +32,7 @@ impl Wallet {
     let public_key = PublicKey::from_secret_key(&secp, &secret_key);
 
     println!("Secret Key: {:?}", secret_key);
+
     Wallet {
       secret_key,
       public_key,
@@ -89,5 +92,20 @@ impl Wallet {
     Transaction::new(Transaction::new_pseudo_hash(), inputs, outputs)
   }
 
-  // Add more functionalities like adding UTXOs, creating transactions, etc., here
+
+ pub fn save(&self, filename: &str) {
+    let dir_path = Path::new("./wallets");
+    fs::create_dir_all(dir_path).expect("Failed to create wallets directory");
+    let file_path = dir_path.join(filename);
+    let public_key_hex = hex::encode(self.public_key.serialize());
+
+    let wallet_data = serde_json::json!({
+      "public_key": public_key_hex,
+      "private_key": public_key_hex,
+      "utxos": self.utxos,
+    });
+
+    let mut file = File::create(file_path).expect("Failed to create wallet file");
+    writeln!(file, "{}", wallet_data.to_string()).expect("Failed to write wallet data");
+  }
 }
