@@ -10,8 +10,8 @@ pub struct Blockchain {
 
 impl Blockchain {
   pub fn new() -> Self {
-    Blockchain { 
-      blocks: Vec::new(),
+    Blockchain {
+      blocks: Vec::new(), 
       transactions_pool: Vec::new()
     }
   }
@@ -38,9 +38,7 @@ impl Blockchain {
 
     println!("previous_hash.clone(): {} | nonce.to_string(): {}", previous_hash.clone(), nonce.to_string());
 
-     let copy_vec: Vec<Transaction> = self.transactions_pool.iter().cloned().collect();
-
-
+    let copy_vec: Vec<Transaction> = self.transactions_pool.iter().cloned().collect();
     
     let new_block = Block::new(header, copy_vec);
     let new_block_hash = utils::hash_block(header);
@@ -86,7 +84,7 @@ impl Blockchain {
 		return genesis_block;
 	}
 
-	pub fn proof_of_work(&mut self, previous_hash: String, version: usize) -> i32 {
+	fn proof_of_work(&mut self, previous_hash: String, version: usize) -> i32 {
     let mut nonce: i32 = 0;
     
     loop {
@@ -121,7 +119,7 @@ impl Blockchain {
     println!("block {}: {:?}", index, self.blocks[index]);
   }
 
-  pub fn show_all_transactions(&mut self) {
+  pub fn get_transactions_in_pool(&mut self) {
     for (i, transaction) in self.transactions_pool.iter().enumerate() {
       println!("transaction {}: {}", i, &transaction.txid);
     }

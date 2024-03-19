@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 extern crate hex;
 use crate::utils;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
   pub txid: String,
   pub inputs: Vec<Input>,
@@ -18,7 +18,7 @@ pub struct UTXO {
   pub script_pubkey: String
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Input {
   pub txid: String,
   // UTXO index
