@@ -87,7 +87,7 @@ async fn handle_wallet_commands(list: bool, create: bool, show: bool, name: &Opt
     // Intended for listing all wallets
     show_all_block_hashes().await;
   } else if create {
-    // Placeholder for wallet creation logic
+    create_wallet().await;
   } else if show {
     if let Some(wallet_name) = name {
       // Placeholder for showing specific wallet information
@@ -130,4 +130,24 @@ async fn show_block_info(index: &String) {
 
   let response = res.text().await.expect("Failed to read response");
   println!("{}", response);
+}
+
+async fn create_wallet() {
+    let client = reqwest::Client::new();
+    let filename = "my_new_wallet.json";  // This should be dinamic.
+
+    let res = client.post("http://127.0.0.1:3030")
+                    .json(&json!({
+                        "jsonrpc": "2.0",
+                        "method": "create_wallet",
+                        "params": [filename],
+                        "id": 1
+                    }))
+                    .send()
+                    .await
+                    .expect("Failed to send request");
+
+    // Printing out the response directly, similar to how it's done in insert_new_block.
+    let response = res.text().await.expect("Failed to read response");
+    println!("{}", response);
 }

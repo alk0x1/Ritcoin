@@ -4,10 +4,7 @@ extern crate serde;
 use rand::{rngs::OsRng, RngCore};
 use secp256k1::{Secp256k1, SecretKey, PublicKey};
 use std::{collections::HashSet, fs::{self, File}, io::Write, path::Path};
-use crate::{transactions::{Input, Transaction, UTXO}, utils};
-use serde::ser::{SerializeStruct, Serializer};
-use serde::{Deserialize, Serialize};
-use hex::encode;
+use crate::transactions::{Input, Transaction, UTXO};
 
 
 #[derive(Debug)]
@@ -92,16 +89,16 @@ impl Wallet {
     Transaction::new(Transaction::new_pseudo_hash(), inputs, outputs)
   }
 
-
  pub fn save(&self, filename: &str) {
     let dir_path = Path::new("./wallets");
     fs::create_dir_all(dir_path).expect("Failed to create wallets directory");
     let file_path = dir_path.join(filename);
     let public_key_hex = hex::encode(self.public_key.serialize());
+    let priv_key_hex = hex::encode(self.secret_key.secret_bytes());
 
     let wallet_data = serde_json::json!({
       "public_key": public_key_hex,
-      "private_key": public_key_hex,
+      "private_key": priv_key_hex,
       "utxos": self.utxos,
     });
 
