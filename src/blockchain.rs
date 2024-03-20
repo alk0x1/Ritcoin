@@ -1,32 +1,40 @@
+use std::collections::HashMap;
+
 use crate::block::{Block, Header};
-use crate::transactions::Transaction;
+use crate::transactions::{Transaction, UTXO};
 use crate::utils::{self, validated_hash};
 
 
 pub struct Blockchain {
   pub blocks: Vec<Block>,
-  pub transactions_pool: Vec<Transaction>
+  pub transactions_pool: Vec<Transaction>,
+  pub utxos: HashMap<String, UTXO>, 
 }
 
 impl Blockchain {
   pub fn new() -> Self {
-    Blockchain {
-      blocks: Vec::new(), 
-      transactions_pool: Vec::new()
-    }
+    let mut blockchain = Blockchain {
+      blocks: Vec::new(),
+      transactions_pool: Vec::new(),
+      utxos: HashMap::new(),
+    };
+
+    let genesis_block = Blockchain::create_genesis_block();
+    blockchain.blocks.push(genesis_block);
+    blockchain.update_utxo_set_for_last_block();
+
+    blockchain
   }
  
   pub fn insert_new_block(&mut self) {
     if self.blocks.len() < 1 {
-      let genesis_block = self.create_genesis_block();
+      let genesis_block = Blockchain::create_genesis_block();
       self.blocks.push(genesis_block);
       // change that message to try catch later
       println!("Genesis block created");
     }
 
     let previous_hash = self.get_last_block_hash();
-    // let mut test_transactions_vec: Vec<String> = Vec::new();
-    // test_transactions_vec.push(String::from("0"));
     let version = 1;
     let nonce = self.proof_of_work(previous_hash.clone(), version.clone());
 
@@ -46,6 +54,7 @@ impl Blockchain {
 
     if block_validated {
       self.blocks.push(new_block);
+      self.update_utxo_set_for_last_block();
     } else {
       println!("Failed to validate block: {}", new_block_hash);
     }
@@ -59,7 +68,7 @@ impl Blockchain {
     return hex::encode(utils::hash(&last_hash));
   }
 
-	pub fn create_genesis_block(&mut self) -> Block {
+	pub fn create_genesis_block() -> Block {
     let value = 50; // genesis block reward value
     let script_pubkey = String::from("genesis_address");
 
@@ -137,7 +146,21 @@ impl Blockchain {
     println!("transactions_pool: {:?}", self.transactions_pool);
   }
 
+  pub fn update_utxo_set_for_last_block(&mut self) {
+    if let Some(last_block) = self.blocks.last()  {
+      for tx in &last_block.transactions {
+        tx.inputs.iter()
+          .map(|input| format!("{}:{}", input.txid, input.vout))
+          .for_each(|key| {
+            self.utxos.remove(&key);
+          });
 
-
-
+        tx.outputs.iter().enumerate()
+          .map(|(index, output)| (format!("{}:{}", tx.txid, index), output.clone()))
+          .for_each(|(key, output)| {
+            self.utxos.insert(key, output);
+          });
+      }
+    }
+  }
 }

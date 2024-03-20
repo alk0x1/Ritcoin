@@ -40,6 +40,16 @@ enum Commands {
     #[arg(short, long)]
     name: Option<String>,
   },
+  Transaction {
+    #[arg(short, long)]
+    create: bool,
+    #[arg(short, long, help = "Public key of the sender")]
+    from: Option<String>,
+    #[arg(short, long, help = "Public key of the recipient")]
+    to: Option<String>,
+    #[arg(short, long, help = "Signature of the transaction")]
+    signature: Option<String>,
+  },
 }
 
 pub async fn spawn() {
@@ -47,31 +57,15 @@ pub async fn spawn() {
 
   if let Some(command) = &cli.command {
     match command {
-      Commands::Start => rpc(),
+      Commands::Start => rpc(), // Start the blockchain
       Commands::Block { insert, list, show } => handle_block_commands(*insert, *list, show).await,
       Commands::Wallet { list, create, show, name } => handle_wallet_commands(*list, *create, *show, name).await,
+      Commands::Transaction { create , from, to, signature} => handle_transactions_commands().await
     }
   }
 }
 
-async fn insert_new_block() {
-  // Keeps the RPC call to insert a new block
-  let client = reqwest::Client::new();
-  let res = client.post("http://127.0.0.1:3030")
-                  .json(&json!({
-                      "jsonrpc": "2.0",
-                      "method": "insert_new_block",
-                      "params": [],
-                      "id": 1
-                  }))
-                  .send()
-                  .await
-                  .expect("Failed to send request");
-
-  let response = res.text().await.expect("Failed to read response");
-  println!("{}", response);
-}
-
+// handlers
 async fn handle_block_commands(insert: bool, list: bool, show: &Option<String>) {
   if list {
     show_all_block_hashes().await;
@@ -96,6 +90,9 @@ async fn handle_wallet_commands(list: bool, create: bool, show: bool, name: &Opt
   }
 }
 
+async fn handle_transactions_commands() {}
+
+// methods
 async fn show_all_block_hashes() {
   // RPC call to list all block hashes
   let client = reqwest::Client::new();
@@ -105,6 +102,24 @@ async fn show_all_block_hashes() {
                       "method": "show_all_block_hashes",
                       "params": [],
                       "id": 2
+                  }))
+                  .send()
+                  .await
+                  .expect("Failed to send request");
+
+  let response = res.text().await.expect("Failed to read response");
+  println!("{}", response);
+}
+
+async fn insert_new_block() {
+  // Keeps the RPC call to insert a new block
+  let client = reqwest::Client::new();
+  let res = client.post("http://127.0.0.1:3030")
+                  .json(&json!({
+                      "jsonrpc": "2.0",
+                      "method": "insert_new_block",
+                      "params": [],
+                      "id": 1
                   }))
                   .send()
                   .await
