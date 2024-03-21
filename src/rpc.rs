@@ -55,12 +55,28 @@ fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
 fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
   let blockchain_clone = blockchain.clone();
   io.add_method("insert_transaction_in_pool", move |params: Params| {
+    println!("params: {:?}", params);
+
     let tx: Transaction = match params.parse() {
-      Ok(tx) => tx,
+      Ok(tx) => {println!("tx: {:?}", tx); tx},
       Err(_) => return Ok(Value::String("Invalid transaction data.".into())),
     };
-    blockchain_clone.lock().unwrap().insert_transaction_in_pool(tx);
-    Ok(Value::String("Transaction inserted into pool.".into()))
+
+
+    let mut blockchain_guard = blockchain_clone.lock().unwrap();
+
+    let from = String::from("025d4949b3fe343039904c0b5ba61686db8af0a40ad548dde0b126adbd13e598b6");
+    let to = String::from("035d4949b3fe343039904c0b5ba61686db8af0a40ad548dde0b126adbd13e598b6");
+    let utxos = &blockchain_guard.utxos;
+    println!("Accessed UTXOs: {:?}", utxos);
+
+    match Transaction::new(from, to, 3, utxos) {
+      Ok(transaction) => {
+        blockchain_guard.insert_transaction_in_pool(transaction);
+        Ok(Value::String("Transaction inserted into pool.".into()))
+      },
+      Err(e) => Ok(Value::String(format!("Error creating transaction: {}", e))),
+    }
   });
 
   // Placeholder for future transaction-related methods.

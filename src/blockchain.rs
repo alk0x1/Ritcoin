@@ -71,8 +71,7 @@ impl Blockchain {
 	pub fn create_genesis_block() -> Block {
     let value = 50; // genesis block reward value
     let script_pubkey = String::from("genesis_address");
-
-    let txid = Transaction::new_pseudo_hash();
+    let txid = Transaction::new_pseudo_hash().expect("Failed to generate pseudo hash for txid");
 
     let coinbase_tx = Transaction::coinbase(txid, value, script_pubkey.clone()).txid;
 

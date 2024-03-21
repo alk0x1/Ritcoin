@@ -60,7 +60,7 @@ pub async fn spawn() {
       Commands::Start => rpc(), // Start the blockchain
       Commands::Block { insert, list, show } => handle_block_commands(*insert, *list, show).await,
       Commands::Wallet { list, create, show, name } => handle_wallet_commands(*list, *create, *show, name).await,
-      Commands::Transaction { create , from, to, signature} => handle_transactions_commands().await
+      Commands::Transaction { create , from, to, signature} => handle_transactions_commands(*create, from, to, signature.clone()).await
     }
   }
 }
@@ -90,7 +90,20 @@ async fn handle_wallet_commands(list: bool, create: bool, show: bool, name: &Opt
   }
 }
 
-async fn handle_transactions_commands() {}
+async fn handle_transactions_commands(create: bool, from: &Option<String>, to: &Option<String>, signature: Option<String>) {
+  if create {
+    match from {
+      Some(addr_from) => match to {
+        Some(addr_to) => {
+          // println!("create: {}, from: {}, to: {}", create, addr_from, addr_to);
+          create_transaction(addr_from, addr_to).await
+        },
+        None => println!("Please provide the receiver address")
+      }
+      None => println!("Please provide the sender address")
+    }
+  }
+}
 
 // methods
 async fn show_all_block_hashes() {
@@ -165,4 +178,21 @@ async fn create_wallet() {
     // Printing out the response directly, similar to how it's done in insert_new_block.
     let response = res.text().await.expect("Failed to read response");
     println!("{}", response);
+}
+
+async fn create_transaction(from: &String, to: &String) {
+  let client = reqwest::Client::new();
+  let res = client.post("http://127.0.0.1:3030")
+                    .json(&json!({
+                        "jsonrpc": "2.0",
+                        "method": "insert_transaction_in_pool",
+                        "params": [from, to],
+                        "id": 4  // Ensure a unique ID for each request
+                    }))
+                    .send()
+                    .await
+                    .expect("Failed to send request");
+
+    let response = res.text().await.expect("Failed to read response");
+    println!("Transaction response: {}", response);
 }

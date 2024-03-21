@@ -1,7 +1,7 @@
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use crate::utils;
-use std::result::Result;
+use std::{collections::HashMap, result::Result};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
@@ -21,13 +21,55 @@ pub struct UTXO {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Input {
   pub txid: String,
-  pub vout: u32,
+  pub vout: i32,
   pub script_sig: String,
 }
 
 impl Transaction {
-  pub fn new(txid: String, inputs: Vec<Input>, outputs: Vec<UTXO>) -> Self {
-    Transaction { txid, inputs, outputs }
+  pub fn new(from: String, to: String, value: u64, utxos: &HashMap<String, UTXO>) -> Result<Self, &'static str> {
+    let mut inputs = Vec::new();
+    let mut outputs: Vec<UTXO> = Vec::new();
+    let mut total_value = 0;
+
+    for (utxo_key, utxo) in utxos {
+      if utxo.script_pubkey == from && total_value < value {
+        total_value += utxo.value;
+        inputs.push(Input {
+          txid: utxo.txid.clone(),
+          vout: utxo.index,
+          script_sig: "signature_placeholder".to_string(), // In real usage, this should be a valid signature
+        });
+
+        // Break early if we have enough value
+        if total_value >= value {
+          break;
+        }
+      }
+    }
+
+    if total_value < value {
+      return Err("Not enough balance");
+    }
+
+
+    if total_value > value {
+      outputs.push(UTXO {
+        txid: Self::new_pseudo_hash().unwrap(), // This should be txid of this transaction, recalculated after inputs/outputs are finalized
+        index: 0,
+        value,
+        script_pubkey: to,
+      });
+    }
+
+    let txid = Self::new_pseudo_hash().unwrap();
+
+    Ok(Transaction {
+      txid,
+      inputs,
+      outputs,
+    })
+
+
   }
 
   pub fn calculate_txid(&self) -> String {
@@ -70,20 +112,37 @@ impl Transaction {
 
   pub fn coinbase(txid: String, value: u64, script_pubkey: String) -> Self {
     Transaction {
-      txid,
+      txid: txid.clone(),
       inputs: Vec::new(),
       outputs: vec![UTXO { txid, index: 0, value, script_pubkey }],
     }
   }
+
 }
 
 impl Input {
+  pub fn new (txid: String, vout: i32, script_sig: String) -> Self {
+    Input {
+      txid,
+      vout,
+      script_sig,
+    }
+  }
+
   pub fn serialize(&self) -> Vec<u8> {
     [self.txid.as_bytes(), &self.vout.to_le_bytes(), self.script_sig.as_bytes()].concat()
   }
 }
 
 impl UTXO {
+  pub fn new (txid: String, index: i32, value: u64, script_pubkey: String) -> Self {
+    UTXO {
+      txid,
+      index,
+      value,
+      script_pubkey
+    }
+  }
   pub fn serialize(&self) -> Vec<u8> {
     [self.txid.as_bytes(), &self.index.to_le_bytes(), &self.value.to_le_bytes(), self.script_pubkey.as_bytes()].concat()
   }
