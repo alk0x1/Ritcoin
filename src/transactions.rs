@@ -27,64 +27,38 @@ pub struct Input {
 
 impl Transaction {
   pub fn new(from: String, to: String, value: u64, utxos: &HashMap<String, UTXO>) -> Result<Self, &'static str> {
-    let mut inputs = Vec::new();
-    let mut outputs: Vec<UTXO> = Vec::new();
-    let mut total_value = 0;
-
-    for (utxo_key, utxo) in utxos {
-      if utxo.script_pubkey == from && total_value < value {
-        total_value += utxo.value;
-        inputs.push(Input {
-          txid: utxo.txid.clone(),
-          vout: utxo.index,
-          script_sig: "signature_placeholder".to_string(), // In real usage, this should be a valid signature
-        });
-
-        // Break early if we have enough value
-        if total_value >= value {
-          break;
+    let (total_value, inputs) = utxos.iter()
+      .filter(|(_, utxo)| utxo.script_pubkey == from)
+      .fold((0_u64, Vec::new()), |(acc_value, mut acc_inputs), (_, utxo)| {
+        if acc_value < value {
+          acc_inputs.push(Input::new(utxo.txid.clone(), utxo.index, "signature_placeholder".to_string()));
         }
-      }
-    }
+        (acc_value + utxo.value, acc_inputs)
+      });
 
     if total_value < value {
       return Err("Not enough balance");
     }
 
-
-    if total_value > value {
-      outputs.push(UTXO {
-        txid: Self::new_pseudo_hash().unwrap(), // This should be txid of this transaction, recalculated after inputs/outputs are finalized
-        index: 0,
+    let outputs = if total_value > value {
+      vec![UTXO::new(
+        utils::double_sha256(b"temporary placeholder"),
+        0,
         value,
-        script_pubkey: to,
-      });
-    }
+        to.clone(),
+      )]
+    } else {
+      Vec::new()
+    };
 
-    let txid = Self::new_pseudo_hash().unwrap();
+    let tx_data = [from, to].join("");
+    let txid = utils::double_sha256(tx_data.as_bytes());
 
     Ok(Transaction {
       txid,
       inputs,
       outputs,
     })
-
-
-  }
-
-  pub fn calculate_txid(&self) -> String {
-    let serialized_data = self.serialize();
-    hex::encode(utils::hash_Vec_u8(&serialized_data))
-  }
-
-  pub fn new_pseudo_hash() -> Result<String, &'static str> {
-    let random_number = rand::thread_rng().gen::<[u8; 1]>();
-    let random_number_converted = std::str::from_utf8(&random_number);
-
-    match random_number_converted {
-      Ok(n) => Ok(hex::encode(utils::hash(n))),
-      Err(_) => Err("Failed to generate pseudo hash."),
-    }
   }
 
   pub fn serialize(&self) -> Vec<u8> {
@@ -110,14 +84,30 @@ impl Transaction {
     serialized_data
   }
 
-  pub fn coinbase(txid: String, value: u64, script_pubkey: String) -> Self {
-    Transaction {
-      txid: txid.clone(),
+  pub fn coinbase(value: u64, script_pubkey: String) -> Self {
+    let outputs = vec![UTXO {
+      txid: String::new(),
+      index: 0,
+      value,
+      script_pubkey,
+    }];
+
+    let mut transaction = Transaction {
+      txid: String::new(),
       inputs: Vec::new(),
-      outputs: vec![UTXO { txid, index: 0, value, script_pubkey }],
-    }
+      outputs,
+    };
+
+    transaction.txid = transaction.calculate_txid();
+    transaction.outputs[0].txid = transaction.txid.clone();
+
+    transaction
   }
 
+  pub fn calculate_txid(&self) -> String {
+    let serialized = serde_json::to_string(&self).expect("Transaction serialization failed");
+    utils::double_sha256(serialized.as_bytes())
+  }
 }
 
 impl Input {

@@ -9,6 +9,7 @@ pub fn rpc() {
   let blockchain = Arc::new(Mutex::new(Blockchain::new()));
   let mut io = IoHandler::default();
 
+  blockchain_methods(&blockchain, &mut io);
   block_methods(&blockchain, &mut io);
   transaction_methods(&blockchain, &mut io);
   wallet_methods(&mut io);
@@ -57,11 +58,10 @@ fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) 
   io.add_method("insert_transaction_in_pool", move |params: Params| {
     println!("params: {:?}", params);
 
-    let tx: Transaction = match params.parse() {
-      Ok(tx) => {println!("tx: {:?}", tx); tx},
-      Err(_) => return Ok(Value::String("Invalid transaction data.".into())),
-    };
-
+    // let tx: Transaction = match params.parse() {
+    //   Ok(tx) => {println!("tx: {:?}", tx); tx},
+    //   Err(_) => return Ok(Value::String("Invalid transaction data.".into())),
+    // };
 
     let mut blockchain_guard = blockchain_clone.lock().unwrap();
 
@@ -98,5 +98,39 @@ fn wallet_methods(io: &mut IoHandler) {
     wallet.save(&filename);
 
     Ok(Value::String(format!("Wallet created and saved as {}", filename)))
+  });
+}
+
+fn blockchain_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
+  let blockchain_clone = blockchain.clone();
+
+  io.add_method("get_blockchain_data", move |_params| {
+    let blockchain_guard = blockchain_clone.lock().unwrap();
+    
+    let transactions_pool_header = "Transactions Pool:";
+    let transactions_pool = &blockchain_guard.transactions_pool;
+    let transactions_info = if transactions_pool.is_empty() {
+        String::from("No transactions in the pool.")
+    } else {
+      transactions_pool.iter().enumerate().map(|(i, tx)| {
+        format!("Transaction {}\n  TXID: {}\n  Inputs: {:?}\n  Outputs: {:?}\n", 
+                  i + 1, tx.txid, tx.inputs, tx.outputs)
+      }).collect::<Vec<String>>().join("\n")
+    };
+
+    let utxos_header = "UTXOs Hashmap {";
+    let utxos = &blockchain_guard.utxos;
+    let utxos_info = if utxos.is_empty() {
+        String::from("No UTXOs available.")
+    } else {
+        utxos.iter().map(|(key, utxo)| {
+            format!("  UTXO Key: {}\n    Details:\n      TXID: {}\n      Index: {}\n      Value: {}\n      Script PubKey: {}\n", 
+                    key, utxo.txid, utxo.index, utxo.value, utxo.script_pubkey)
+        }).collect::<Vec<String>>().join("\n")
+    };
+
+    let data = format!("{}\n{}\n\n{}\n{}\n}}", transactions_pool_header, transactions_info, utxos_header, utxos_info);
+    
+    Ok(Value::String(data))
   });
 }

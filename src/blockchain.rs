@@ -27,36 +27,41 @@ impl Blockchain {
   }
  
   pub fn insert_new_block(&mut self) {
-    if self.blocks.len() < 1 {
+    if self.blocks.is_empty() {
       let genesis_block = Blockchain::create_genesis_block();
       self.blocks.push(genesis_block);
-      // change that message to try catch later
       println!("Genesis block created");
     }
 
     let previous_hash = self.get_last_block_hash();
     let version = 1;
-    let nonce = self.proof_of_work(previous_hash.clone(), version.clone());
+    let nonce = self.proof_of_work(&previous_hash, version);
 
-    let header = &Header {
-      previous_hash: previous_hash.clone(),
+    let mut transactions = vec![self.create_coinbase_transaction()];
+    transactions.append(&mut self.transactions_pool);
+
+    let header = Header {
+      previous_hash,
       nonce,
-      version
+      version,
     };
 
-    println!("previous_hash.clone(): {} | nonce.to_string(): {}", previous_hash.clone(), nonce.to_string());
+    println!("previous_hash.clone(): {} | nonce.to_string(): {}", header.previous_hash, header.nonce);
 
     let copy_vec: Vec<Transaction> = self.transactions_pool.iter().cloned().collect();
     
-    let new_block = Block::new(header, copy_vec);
-    let new_block_hash = utils::hash_block(header);
-    let block_validated = utils::validated_hash(new_block_hash.clone(), 2, String::from("0"));
+    let new_block = Block::new(&header, copy_vec);
 
-    if block_validated {
+    let block_header_hash = utils::hash_block(&header);
+    let block_header_hash_bytes = hex::decode(block_header_hash).expect("Failed to decode hex string");
+    let new_block_hash = utils::double_sha256(&block_header_hash_bytes);
+
+    if utils::validated_hash(new_block_hash.clone(), 2, String::from("0")) {
       self.blocks.push(new_block);
       self.update_utxo_set_for_last_block();
+      println!("Block added with hash: {}", hex::encode(new_block_hash));
     } else {
-      println!("Failed to validate block: {}", new_block_hash);
+      println!("Failed to validate block: {}", hex::encode(new_block_hash));
     }
   }
 
@@ -71,11 +76,7 @@ impl Blockchain {
 	pub fn create_genesis_block() -> Block {
     let value = 50; // genesis block reward value
     let script_pubkey = String::from("genesis_address");
-    let txid = Transaction::new_pseudo_hash().expect("Failed to generate pseudo hash for txid");
-
-    let coinbase_tx = Transaction::coinbase(txid, value, script_pubkey.clone()).txid;
-
-    let genesis_transaction = Transaction::coinbase(coinbase_tx, value, script_pubkey);
+    let genesis_transaction = Transaction::coinbase(value, script_pubkey);
 
     let genesis_block_header: Header = Header { 
 			version: 1,
@@ -83,16 +84,14 @@ impl Blockchain {
       nonce: 0
 		};
 
-		let genesis_block: Block = Block { 
+	  Block { 
 			header: genesis_block_header,
 			transactions_counter: 0,
 			transactions: vec![genesis_transaction]
-		};
-
-		return genesis_block;
+		}
 	}
 
-	fn proof_of_work(&mut self, previous_hash: String, version: usize) -> i32 {
+	fn proof_of_work(&mut self, previous_hash: &String, version: usize) -> i32 {
     let mut nonce: i32 = 0;
     
     loop {
@@ -127,10 +126,8 @@ impl Blockchain {
     println!("block {}: {:?}", index, self.blocks[index]);
   }
 
-  pub fn get_transactions_in_pool(&mut self) {
-    for (i, transaction) in self.transactions_pool.iter().enumerate() {
-      println!("transaction {}: {}", i, &transaction.txid);
-    }
+  pub fn get_transactions_in_pool(&mut self) -> Vec<Transaction> {
+    self.transactions_pool.clone()
   }
 
   pub fn show_transaction_info(&mut self, index: usize) {
@@ -161,5 +158,15 @@ impl Blockchain {
           });
       }
     }
+  }
+
+  pub fn get_utxos(&mut self) -> HashMap<String, UTXO>{
+    self.utxos.clone()
+  }
+  fn create_coinbase_transaction(&self) -> Transaction {
+    let reward = 50; 
+    let address = "miner_address";
+    let txid = utils::double_sha256(format!("coinbase to {}", address).as_bytes());  // Unique txid for coinbase
+    Transaction::coinbase(reward, address.to_string())
   }
 }

@@ -21,7 +21,12 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-  Start,
+  Blockchain {
+    #[arg(short, long)]
+    start: bool,
+    #[arg(short, long)]
+    info: bool,
+  },
   Block {
     #[arg(short, long)]
     list: bool,
@@ -57,7 +62,7 @@ pub async fn spawn() {
 
   if let Some(command) = &cli.command {
     match command {
-      Commands::Start => rpc(), // Start the blockchain
+      Commands::Blockchain { start, info } => handle_blockchain_commands(*start, *info).await, // Start the blockchain
       Commands::Block { insert, list, show } => handle_block_commands(*insert, *list, show).await,
       Commands::Wallet { list, create, show, name } => handle_wallet_commands(*list, *create, *show, name).await,
       Commands::Transaction { create , from, to, signature} => handle_transactions_commands(*create, from, to, signature.clone()).await
@@ -66,6 +71,43 @@ pub async fn spawn() {
 }
 
 // handlers
+async fn handle_blockchain_commands(start: bool, info: bool) {
+    if start {
+        rpc();
+    }
+    if info {
+        get_blockchain_data().await;
+    }
+}
+
+async fn get_blockchain_data() {
+    let client = reqwest::Client::new();
+    let res = client.post("http://127.0.0.1:3030")
+                    .json(&json!({
+                        "jsonrpc": "2.0",
+                        "method": "get_blockchain_data",
+                        "params": [],
+                        "id": 5
+                    }))
+                    .send()
+                    .await
+                    .expect("Failed to send request");
+
+    let response = res.text().await.expect("Failed to read response");
+
+    // Assuming the response is in JSON format and has a "result" field with the data
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&response) {
+        if let Some(result) = val["result"].as_str() {
+            println!("Blockchain data:\n{}", result);
+        } else {
+            println!("Error retrieving blockchain data.");
+        }
+    } else {
+        println!("Failed to parse response.");
+    }
+}
+
+
 async fn handle_block_commands(insert: bool, list: bool, show: &Option<String>) {
   if list {
     show_all_block_hashes().await;

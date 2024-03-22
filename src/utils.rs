@@ -10,10 +10,10 @@ pub fn hash(data: &str) -> GenericArray<u8, UInt<UInt<UInt<UInt<UInt<UInt<UTerm,
 }
 
 pub fn hash_Vec_u8(data: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(data);
-    let result = hasher.finalize();
-    hex::encode(result)
+  let mut hasher = Sha256::new();
+  hasher.update(data);
+  let result = hasher.finalize();
+  hex::encode(result)
 }
 
 pub fn hash_block(block_header: &Header) -> String {
@@ -68,6 +68,14 @@ pub fn print_menu() {
 	println!("-------------------------------------");
 }
 
+pub fn double_sha256(data: &[u8]) -> String {
+  let mut hasher = Sha256::new();
+  hasher.update(data);
+  let result = hasher.finalize();
+  let mut hasher2 = Sha256::new();
+  hasher2.update(result);
+  hex::encode(hasher2.finalize())
+}
 
 // pub fn interact_with_menu() -> usize {
 //   let mut option = String::new();
