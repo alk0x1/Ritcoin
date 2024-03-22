@@ -1,4 +1,4 @@
-use rand::Rng;
+use rsa::rand_core::block;
 use serde::{Deserialize, Serialize};
 use crate::utils;
 use std::{collections::HashMap, result::Result};
@@ -8,6 +8,8 @@ pub struct Transaction {
   pub txid: String,
   pub inputs: Vec<Input>,
   pub outputs: Vec<UTXO>,
+  pub block_height: u64,
+
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, Eq, PartialEq)]
@@ -26,7 +28,7 @@ pub struct Input {
 }
 
 impl Transaction {
-  pub fn new(from: String, to: String, value: u64, utxos: &HashMap<String, UTXO>) -> Result<Self, &'static str> {
+  pub fn new(from: String, to: String, value: u64, utxos: &HashMap<String, UTXO>, block_height: u64) -> Result<Self, &'static str> {
     let (total_value, inputs) = utxos.iter()
       .filter(|(_, utxo)| utxo.script_pubkey == from)
       .fold((0_u64, Vec::new()), |(acc_value, mut acc_inputs), (_, utxo)| {
@@ -58,6 +60,7 @@ impl Transaction {
       txid,
       inputs,
       outputs,
+      block_height,
     })
   }
 
@@ -84,28 +87,41 @@ impl Transaction {
     serialized_data
   }
 
-  pub fn coinbase(value: u64, script_pubkey: String) -> Self {
+  pub fn coinbase(block_height: u64, value: u64, script_pubkey: String) -> Self {
     let outputs = vec![UTXO {
-      txid: String::new(),
-      index: 0,
-      value,
-      script_pubkey,
+        txid: String::new(), // This will be updated after the txid is calculated.
+        index: 0,
+        value,
+        script_pubkey,
     }];
 
     let mut transaction = Transaction {
-      txid: String::new(),
-      inputs: Vec::new(),
-      outputs,
+        block_height,
+        txid: String::new(), // Placeholder, to be calculated.
+        inputs: Vec::new(), // No inputs for coinbase.
+        outputs,
     };
 
-    transaction.txid = transaction.calculate_txid();
-    transaction.outputs[0].txid = transaction.txid.clone();
+    transaction.txid = transaction.calculate_txid(block_height);
 
+    println!("transaction.txid: {}", transaction.txid);
+
+    for output in transaction.outputs.iter_mut() {
+      output.txid = transaction.txid.clone();
+    }
+
+    println!("transaction-return: {:?}", transaction);
     transaction
   }
 
-  pub fn calculate_txid(&self) -> String {
-    let serialized = serde_json::to_string(&self).expect("Transaction serialization failed");
+
+  pub fn calculate_txid(&self, block_height: u64) -> String {
+    let mut serialized = serde_json::to_string(&self).expect("Transaction serialization failed");
+    
+    let height = block_height.to_string();
+    serialized.push_str(&height);
+
+    println!("utils::double_sha256(serialized.as_bytes()): {:?}", utils::double_sha256(serialized.as_bytes()));
     utils::double_sha256(serialized.as_bytes())
   }
 }

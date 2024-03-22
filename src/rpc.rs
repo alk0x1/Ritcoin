@@ -68,9 +68,11 @@ fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) 
     let from = String::from("025d4949b3fe343039904c0b5ba61686db8af0a40ad548dde0b126adbd13e598b6");
     let to = String::from("035d4949b3fe343039904c0b5ba61686db8af0a40ad548dde0b126adbd13e598b6");
     let utxos = &blockchain_guard.utxos;
+    let height = blockchain_guard.blocks.len() as u64;
+
     println!("Accessed UTXOs: {:?}", utxos);
 
-    match Transaction::new(from, to, 3, utxos) {
+    match Transaction::new(from, to, 3, utxos, height) {
       Ok(transaction) => {
         blockchain_guard.insert_transaction_in_pool(transaction);
         Ok(Value::String("Transaction inserted into pool.".into()))

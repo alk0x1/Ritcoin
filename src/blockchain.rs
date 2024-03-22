@@ -30,14 +30,14 @@ impl Blockchain {
     if self.blocks.is_empty() {
       let genesis_block = Blockchain::create_genesis_block();
       self.blocks.push(genesis_block);
-      println!("Genesis block created");
+      // println!("Genesis block created");
     }
 
-    let previous_hash = self.get_last_block_hash();
     let version = 1;
+    let previous_hash = self.get_last_block_hash();
     let nonce = self.proof_of_work(&previous_hash, version);
 
-    let mut transactions = vec![self.create_coinbase_transaction()];
+    let mut transactions = vec![Blockchain::create_coinbase_transaction(self.blocks.len() as u64)];
     transactions.append(&mut self.transactions_pool);
 
     let header = Header {
@@ -46,22 +46,21 @@ impl Blockchain {
       version,
     };
 
-    println!("previous_hash.clone(): {} | nonce.to_string(): {}", header.previous_hash, header.nonce);
+    // println!("previous_hash.clone(): {} | nonce.to_string(): {}", header.previous_hash, header.nonce);
 
-    let copy_vec: Vec<Transaction> = self.transactions_pool.iter().cloned().collect();
+    // let copy_vec: Vec<Transaction> = self.transactions_pool.iter().cloned().collect();
     
-    let new_block = Block::new(&header, copy_vec);
+    let new_block = Block::new(&header, transactions);
 
-    let block_header_hash = utils::hash_block(&header);
-    let block_header_hash_bytes = hex::decode(block_header_hash).expect("Failed to decode hex string");
-    let new_block_hash = utils::double_sha256(&block_header_hash_bytes);
+    let new_block_hash = utils::hash_block(&header);
+    let block_validated = utils::validated_hash(new_block_hash.clone(), 2, String::from("0"));
 
-    if utils::validated_hash(new_block_hash.clone(), 2, String::from("0")) {
+    if block_validated {
       self.blocks.push(new_block);
       self.update_utxo_set_for_last_block();
-      println!("Block added with hash: {}", hex::encode(new_block_hash));
+      // println!("Block added with hash: {}", hex::encode(new_block_hash));
     } else {
-      println!("Failed to validate block: {}", hex::encode(new_block_hash));
+      // println!("Failed to validate block: {}", hex::encode(new_block_hash));
     }
   }
 
@@ -74,9 +73,7 @@ impl Blockchain {
   }
 
 	pub fn create_genesis_block() -> Block {
-    let value = 50; // genesis block reward value
-    let script_pubkey = String::from("genesis_address");
-    let genesis_transaction = Transaction::coinbase(value, script_pubkey);
+    let genesis_transaction = Blockchain::create_coinbase_transaction(0);
 
     let genesis_block_header: Header = Header { 
 			version: 1,
@@ -106,7 +103,7 @@ impl Blockchain {
       let hashed_with_nonce = utils::hash_block(header);
 
       if validated_hash(hashed_with_nonce.clone(), 3, prefix) {
-        println!("nonce {} validated: {}", nonce, hashed_with_nonce);
+        // println!("nonce {} validated: {}", nonce, hashed_with_nonce);
         return nonce;
       }
       nonce = nonce + 1;
@@ -143,30 +140,37 @@ impl Blockchain {
   }
 
   pub fn update_utxo_set_for_last_block(&mut self) {
-    if let Some(last_block) = self.blocks.last()  {
-      for tx in &last_block.transactions {
-        tx.inputs.iter()
-          .map(|input| format!("{}:{}", input.txid, input.vout))
-          .for_each(|key| {
-            self.utxos.remove(&key);
-          });
+  if let Some(last_block) = self.blocks.last() {
 
-        tx.outputs.iter().enumerate()
-          .map(|(index, output)| (format!("{}:{}", tx.txid, index), output.clone()))
-          .for_each(|(key, output)| {
-            self.utxos.insert(key, output);
-          });
+    println!("&last_block.transactions {:?}", &last_block.transactions);
+
+    for tx in &last_block.transactions {
+      // Process inputs: remove corresponding UTXOs
+      for input in &tx.inputs {
+        let input_key = format!("{}:{}", input.txid, input.vout);
+        self.utxos.remove(&input_key);
+        // Debug: Print action
+        println!("Removed UTXO for spent input: {}", input_key);
+      }
+
+      // Process outputs: add new UTXOs
+      for (index, output) in tx.outputs.iter().enumerate() {
+        let output_key = format!("{}:{}", tx.txid, index);
+        self.utxos.insert(output_key.clone(), output.clone());
+        println!("Added UTXO for output: {}", output_key);
       }
     }
   }
+}
+
 
   pub fn get_utxos(&mut self) -> HashMap<String, UTXO>{
     self.utxos.clone()
   }
-  fn create_coinbase_transaction(&self) -> Transaction {
+
+  pub fn create_coinbase_transaction(block_height: u64) -> Transaction {
     let reward = 50; 
     let address = "miner_address";
-    let txid = utils::double_sha256(format!("coinbase to {}", address).as_bytes());  // Unique txid for coinbase
-    Transaction::coinbase(reward, address.to_string())
+    Transaction::coinbase(block_height, reward, address.to_string())
   }
 }
