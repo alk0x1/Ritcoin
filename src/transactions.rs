@@ -114,7 +114,6 @@ impl Transaction {
     transaction
   }
 
-
   pub fn calculate_txid(&self, block_height: u64) -> String {
     let mut serialized = serde_json::to_string(&self).expect("Transaction serialization failed");
     

@@ -9,29 +9,20 @@ Basically I will read the Bitcoin paper and recreate using Rust, while I comment
 
 ## CLI
 ```bash
-Usage: ritcoin [OPTIONS] [NAME] [COMMAND]
+Usage: ritcoin [OPTIONS] [COMMAND]
 
 Commands:
-  start   			create a blockchain
-  mine			    insert_block in the blockchain
-  transaction		create a transaction and insert in the transaction pool
-  wallet  			manage wallets
-  help    			Print this message or the help of the given subcommand(s)
-
-Arguments:
-  [NAME]  Optional name to operate on
+  blockchain
+  block
+  wallet
+  transaction
+  help         Print this message or the help of the given subcommand(s)
 
 Options:
-  -c, --config <FILE>  Sets a custom config file
-  -d, --debug...       Turn debugging information on
+  -n, --name <NAME>
+  -c, --config <FILE>
+  -d, --debug...
   -h, --help           Print help
   -V, --version        Print version
 
 ```
-
-/* options
-	- criar blockchain
-	- minerar bloco com todas as transações validadas na pool
-	- criar carteira
-	-	criar transações e assina-las
-*/

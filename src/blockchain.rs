@@ -170,7 +170,7 @@ impl Blockchain {
 
   pub fn create_coinbase_transaction(block_height: u64) -> Transaction {
     let reward = 50; 
-    let address = "miner_address";
+    let address = "025d4949b3fe343039904c0b5ba61686db8af0a40ad548dde0b126adbd13e598b6";
     Transaction::coinbase(block_height, reward, address.to_string())
   }
 }

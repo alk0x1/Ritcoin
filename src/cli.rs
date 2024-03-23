@@ -23,16 +23,30 @@ struct Cli {
 enum Commands {
   Blockchain {
     #[arg(short, long)]
-    start: bool,
+    create: bool,
     #[arg(short, long)]
     info: bool,
+    #[arg(short, long, help = "Show all blocks in the blockchain")]
+    show_blocks: bool,
   },
   Block {
     #[arg(short, long)]
-    list: bool,
-    #[arg(short, long)]
     insert: bool,
     #[arg(short, long)]
+    show_details: Option<String>,
+    #[arg(short, long, help = "Show all transactions in a specific block")]
+    list_transactions: Option<String>,
+  },
+  Transaction {
+    #[arg(short, long)]
+    create: bool,
+    #[arg(short, long, help = "Public key of the sender")]
+    from: Option<String>,
+    #[arg(short, long, help = "Public key of the recipient")]
+    to: Option<String>,
+    #[arg(short, long, help = "Signature of the transaction")]
+    signature: Option<String>,
+    #[arg(short, long, help = "Show information for a specific transaction")]
     show: Option<String>,
   },
   Wallet {
@@ -45,16 +59,6 @@ enum Commands {
     #[arg(short, long)]
     name: Option<String>,
   },
-  Transaction {
-    #[arg(short, long)]
-    create: bool,
-    #[arg(short, long, help = "Public key of the sender")]
-    from: Option<String>,
-    #[arg(short, long, help = "Public key of the recipient")]
-    to: Option<String>,
-    #[arg(short, long, help = "Signature of the transaction")]
-    signature: Option<String>,
-  },
 }
 
 pub async fn spawn() {
@@ -62,24 +66,69 @@ pub async fn spawn() {
 
   if let Some(command) = &cli.command {
     match command {
-      Commands::Blockchain { start, info } => handle_blockchain_commands(*start, *info).await, // Start the blockchain
-      Commands::Block { insert, list, show } => handle_block_commands(*insert, *list, show).await,
+      Commands::Blockchain { create, info, show_blocks } => handle_blockchain_commands(*create, *info, *show_blocks).await, // Start the blockchain
+      Commands::Block { insert, show_details, list_transactions } => handle_block_commands(*insert, show_details, list_transactions).await,
       Commands::Wallet { list, create, show, name } => handle_wallet_commands(*list, *create, *show, name).await,
-      Commands::Transaction { create , from, to, signature} => handle_transactions_commands(*create, from, to, signature.clone()).await
+      Commands::Transaction { create , from, to, signature, show} => handle_transactions_commands(*create, from, to, signature.clone()).await
     }
   }
 }
 
 // handlers
-async fn handle_blockchain_commands(start: bool, info: bool) {
-    if start {
-        rpc();
-    }
-    if info {
-        get_blockchain_data().await;
-    }
+async fn handle_blockchain_commands(create: bool, info: bool, show_blocks: bool) {
+  if create {
+    rpc();
+  }
+  if show_blocks {
+    show_all_block_hashes().await;  
+  }
+  if info {
+    get_blockchain_data().await;
+  }
 }
 
+async fn handle_block_commands(insert: bool, show_details: &Option<String>, list_transactions: &Option<String>) {
+  if let Some(list_transactions) = list_transactions {
+    show_transactions_in_a_block(list_transactions).await;
+  } 
+ if insert {
+    insert_new_block().await;
+  }
+  if let Some(index) = show_details {
+    show_block_info(&index).await;
+  }
+}
+
+async fn handle_wallet_commands(list: bool, create: bool, show: bool, name: &Option<String>) {
+  if list {
+    // Intended for listing all wallets
+    // show_all_block_hashes().await;
+  } else if create {
+    create_wallet().await;
+  } else if show {
+    if let Some(wallet_name) = name {
+      // Placeholder for showing specific wallet information
+      println!("Showing information for wallet: {}", wallet_name);
+    }
+  }
+}
+
+async fn handle_transactions_commands(create: bool, from: &Option<String>, to: &Option<String>, signature: Option<String>) {
+  if create {
+    match from {
+      Some(addr_from) => match to {
+        Some(addr_to) => {
+          // println!("create: {}, from: {}, to: {}", create, addr_from, addr_to);
+          create_transaction(addr_from, addr_to).await
+        },
+        None => println!("Please provide the receiver address")
+      }
+      None => println!("Please provide the sender address")
+    }
+  }
+}
+
+// methods
 async fn get_blockchain_data() {
     let client = reqwest::Client::new();
     let res = client.post("http://127.0.0.1:3030")
@@ -107,63 +156,32 @@ async fn get_blockchain_data() {
     }
 }
 
-
-async fn handle_block_commands(insert: bool, list: bool, show: &Option<String>) {
-  if list {
-    show_all_block_hashes().await;
-  } else if insert {
-    insert_new_block().await;
-  } else if let Some(index) = show {
-    show_block_info(index).await;
-  }
-}
-
-async fn handle_wallet_commands(list: bool, create: bool, show: bool, name: &Option<String>) {
-  if list {
-    // Intended for listing all wallets
-    show_all_block_hashes().await;
-  } else if create {
-    create_wallet().await;
-  } else if show {
-    if let Some(wallet_name) = name {
-      // Placeholder for showing specific wallet information
-      println!("Showing information for wallet: {}", wallet_name);
-    }
-  }
-}
-
-async fn handle_transactions_commands(create: bool, from: &Option<String>, to: &Option<String>, signature: Option<String>) {
-  if create {
-    match from {
-      Some(addr_from) => match to {
-        Some(addr_to) => {
-          // println!("create: {}, from: {}, to: {}", create, addr_from, addr_to);
-          create_transaction(addr_from, addr_to).await
-        },
-        None => println!("Please provide the receiver address")
-      }
-      None => println!("Please provide the sender address")
-    }
-  }
-}
-
-// methods
 async fn show_all_block_hashes() {
-  // RPC call to list all block hashes
   let client = reqwest::Client::new();
   let res = client.post("http://127.0.0.1:3030")
-                  .json(&json!({
-                      "jsonrpc": "2.0",
-                      "method": "show_all_block_hashes",
-                      "params": [],
-                      "id": 2
-                  }))
-                  .send()
-                  .await
-                  .expect("Failed to send request");
+    .json(&serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "show_all_block_hashes",
+        "params": [],
+        "id": 2
+    }))
+    .send()
+    .await
+    .expect("Failed to send request");
 
-  let response = res.text().await.expect("Failed to read response");
-  println!("{}", response);
+  let response_text = res.text().await.expect("Failed to read response");
+  let response_json: serde_json::Value = serde_json::from_str(&response_text)
+    .expect("Failed to parse JSON");
+
+  // Extract and print the "result" field correctly
+  if let Some(result) = response_json["result"].as_str() {
+    // Split the result into lines and print each line separately
+    for line in result.split("\\n") {
+      println!("{}", line);
+    }
+  } else {
+    println!("No result found in response.");
+  }
 }
 
 async fn insert_new_block() {
@@ -237,4 +255,32 @@ async fn create_transaction(from: &String, to: &String) {
 
     let response = res.text().await.expect("Failed to read response");
     println!("Transaction response: {}", response);
+}
+
+async fn show_transactions_in_a_block(block_identifier: &str) {
+let client = reqwest::Client::new();
+  let res = client.post("http://127.0.0.1:3030")
+    .json(&serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "show_transactions_in_a_block",
+        "params": [block_identifier],
+        "id": 3
+    }))
+    .send()
+    .await
+    .expect("Failed to send request");
+
+  let response_text = res.text().await.expect("Failed to read response");
+  let response_json: serde_json::Value = serde_json::from_str(&response_text)
+      .expect("Failed to parse JSON");
+
+  // Extract and print the "result" field correctly
+  if let Some(result) = response_json["result"].as_str() {
+    // Split the result into lines and print each line separately
+    for line in result.split("\\n") {
+        println!("{}", line);
+    }
+  } else {
+    println!("No result found in response.");
+  }
 }

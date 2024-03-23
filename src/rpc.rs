@@ -3,7 +3,7 @@ use jsonrpc_http_server::jsonrpc_core::*;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 
-use crate::{blockchain::Blockchain, transactions::Transaction, wallets_2::Wallet};
+use crate::{blockchain::Blockchain, transactions::Transaction, utils, wallets_2::Wallet};
 
 pub fn rpc() {
   let blockchain = Arc::new(Mutex::new(Blockchain::new()));
@@ -37,12 +37,6 @@ fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
   });
 
   let blockchain_clone = blockchain.clone();
-  io.add_method("show_all_block_hashes", move |_params| {
-    blockchain_clone.lock().unwrap().show_all_block_hashes();
-    Ok(Value::String("Block hashes displayed.".into()))
-  });
-
-  let blockchain_clone = blockchain.clone();
   io.add_method("show_block_info", move |params: Params| {
     let index: usize = match params.parse() {
       Ok(index) => index,
@@ -51,6 +45,31 @@ fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
     blockchain_clone.lock().unwrap().show_block_info(index);
     Ok(Value::String(format!("Info for block {} displayed.", index)))
   });
+
+  let blockchain_clone = blockchain.clone();
+  io.add_method("show_transactions_in_a_block", move |params: Params| {
+        match params.parse::<usize>() {
+            Ok(index) => {
+                let blockchain_guard = blockchain_clone.lock().unwrap();
+                if index < blockchain_guard.blocks.len() {
+                    let block = &blockchain_guard.blocks[index];
+                    // Construct the information string for transactions within the block.
+                    let transactions_info: String = block.transactions.iter().enumerate().map(|(tx_index, tx)| {
+                        format!("Transaction {} in Block {}:\n  TXID: {}\n  Inputs: {:?}\n  Outputs: {:?}",
+                                tx_index + 1, index, tx.txid, tx.inputs, tx.outputs)
+                    }).collect::<Vec<String>>().join("\n\n");
+
+                    // Using the jsonrpc_core::Result's Ok variant directly to avoid confusion with the standard Rust Result.
+                    Ok(Value::String(transactions_info))
+                } else {
+                    Ok(Value::String(format!("Block with index {} not found.", index)))
+                }
+            },
+            // Handling the case where parsing the block index fails.
+            Err(_) => Ok(Value::String("Invalid block index provided.".into()))
+        }
+
+    });
 }
 
 fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
@@ -104,35 +123,47 @@ fn wallet_methods(io: &mut IoHandler) {
 }
 
 fn blockchain_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
-  let blockchain_clone = blockchain.clone();
-
-  io.add_method("get_blockchain_data", move |_params| {
-    let blockchain_guard = blockchain_clone.lock().unwrap();
-    
-    let transactions_pool_header = "Transactions Pool:";
-    let transactions_pool = &blockchain_guard.transactions_pool;
-    let transactions_info = if transactions_pool.is_empty() {
-        String::from("No transactions in the pool.")
-    } else {
-      transactions_pool.iter().enumerate().map(|(i, tx)| {
-        format!("Transaction {}\n  TXID: {}\n  Inputs: {:?}\n  Outputs: {:?}\n", 
-                  i + 1, tx.txid, tx.inputs, tx.outputs)
-      }).collect::<Vec<String>>().join("\n")
-    };
-
-    let utxos_header = "UTXOs Hashmap {";
-    let utxos = &blockchain_guard.utxos;
-    let utxos_info = if utxos.is_empty() {
-        String::from("No UTXOs available.")
-    } else {
-        utxos.iter().map(|(key, utxo)| {
-            format!("  UTXO Key: {}\n    Details:\n      TXID: {}\n      Index: {}\n      Value: {}\n      Script PubKey: {}\n", 
-                    key, utxo.txid, utxo.index, utxo.value, utxo.script_pubkey)
+  io.add_method("get_blockchain_data", {
+    let blockchain_clone = blockchain.clone();
+    move |_params| {
+      let blockchain_guard = blockchain_clone.lock().unwrap();
+      
+      let transactions_pool_header = "Transactions Pool:";
+      let transactions_pool = &blockchain_guard.transactions_pool;
+      let transactions_info = if transactions_pool.is_empty() {
+          String::from("No transactions in the pool.")
+      } else {
+        transactions_pool.iter().enumerate().map(|(i, tx)| {
+          format!("Transaction {}\n  TXID: {}\n  Inputs: {:?}\n  Outputs: {:?}\n", 
+                    i + 1, tx.txid, tx.inputs, tx.outputs)
         }).collect::<Vec<String>>().join("\n")
-    };
+      };
 
-    let data = format!("{}\n{}\n\n{}\n{}\n}}", transactions_pool_header, transactions_info, utxos_header, utxos_info);
-    
-    Ok(Value::String(data))
+      let utxos_header = "UTXOs Hashmap {";
+      let utxos = &blockchain_guard.utxos;
+      let utxos_info = if utxos.is_empty() {
+          String::from("No UTXOs available.")
+      } else {
+          utxos.iter().map(|(key, utxo)| {
+              format!("  UTXO Key: {}\n    Details:\n      TXID: {}\n      Index: {}\n      Value: {}\n      Script PubKey: {}\n", 
+                      key, utxo.txid, utxo.index, utxo.value, utxo.script_pubkey)
+          }).collect::<Vec<String>>().join("\n")
+      };
+
+      let data = format!("{}\n{}\n\n{}\n{}\n}}", transactions_pool_header, transactions_info, utxos_header, utxos_info);
+      
+      Ok(Value::String(data))
+  }});
+
+  io.add_method("show_all_block_hashes", {
+    let blockchain_clone = blockchain.clone(); // Clone again for this closure
+    move |_params| {
+      let blockchain_guard = blockchain_clone.lock().unwrap();
+        let blocks_info: String = blockchain_guard.blocks.iter().enumerate().map(|(index, block)| {
+          let block_hash = utils::hash_block(&block.header);
+          format!("block {}: {}", index, block_hash)
+        }).collect::<Vec<String>>().join("\n");
+        Ok(Value::String(blocks_info))
+    }
   });
 }
