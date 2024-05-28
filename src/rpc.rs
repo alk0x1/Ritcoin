@@ -23,7 +23,8 @@ pub fn rpc() {
   server.wait();
 }
 
-fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
+
+pub fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
   let blockchain_clone = blockchain.clone();
   io.add_method("insert_new_block", move |_params| {
     blockchain_clone.lock().unwrap().insert_new_block();
@@ -72,7 +73,7 @@ fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
     });
 }
 
-fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
+pub fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
   let blockchain_clone = blockchain.clone();
   io.add_method("insert_transaction_in_pool", move |params: Params| {
     println!("params: {:?}", params);
@@ -104,7 +105,7 @@ fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) 
 }
 
 // Placeholder for future wallet_methods implementation.
-fn wallet_methods(io: &mut IoHandler) {
+pub fn wallet_methods(io: &mut IoHandler) {
   io.add_method("create_wallet", move |params: Params| {
     // Extract filename or any other necessary parameters from the received params
     let args: (String,) = match params.parse() {
@@ -122,7 +123,7 @@ fn wallet_methods(io: &mut IoHandler) {
   });
 }
 
-fn blockchain_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
+pub fn blockchain_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
   io.add_method("get_blockchain_data", {
     let blockchain_clone = blockchain.clone();
     move |_params| {

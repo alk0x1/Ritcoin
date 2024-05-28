@@ -1,15 +1,7 @@
-mod block;
-mod blockchain;
-mod utils;
-mod transactions;
-mod wallets_2;
-mod cli;
-mod rpc;
+	
 #[tokio::main]
-
 async fn main() {
-    cli::spawn().await;
-
+  ritcoin::rpc::rpc();
 	// utils::print_menu();
 	// let mut option1 = String::new();
 	// let mut new_blockchain = blockchain::Blockchain::new();

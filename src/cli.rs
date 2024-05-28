@@ -5,7 +5,7 @@ use crate::rpc::rpc;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
-struct Cli {
+pub struct Cli {
   #[arg(short, long)]
   name: Option<String>,
 
@@ -258,7 +258,7 @@ async fn create_transaction(from: &String, to: &String) {
 }
 
 async fn show_transactions_in_a_block(block_identifier: &str) {
-let client = reqwest::Client::new();
+  let client = reqwest::Client::new();
   let res = client.post("http://127.0.0.1:3030")
     .json(&serde_json::json!({
         "jsonrpc": "2.0",
