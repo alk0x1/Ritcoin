@@ -46,7 +46,7 @@ enum Commands {
     to: Option<String>,
     #[arg(short, long, help = "Signature of the transaction")]
     signature: Option<String>,
-    #[arg(short, long, help = "Show information for a specific transaction")]
+    #[arg(long, help = "Show information for a specific transaction")]
     show: Option<String>,
   },
   Wallet {
@@ -210,7 +210,7 @@ async fn show_block_info(index: &String) {
                       "jsonrpc": "2.0",
                       "method": "show_block_info",
                       "params": [index],
-                      "id": 3
+                      "id": index
                   }))
                   .send()
                   .await

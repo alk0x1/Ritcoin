@@ -39,38 +39,55 @@ pub fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
 
   let blockchain_clone = blockchain.clone();
   io.add_method("show_block_info", move |params: Params| {
-    let index: usize = match params.parse() {
-      Ok(index) => index,
-      Err(_) => return Ok(Value::String("Invalid index.".into())),
+    let index: usize = match params {
+      Params::Array(arr) if arr.len() == 1 => {
+        if let Value::String(index_str) = &arr[0] {
+          index_str.parse::<usize>().unwrap_or_else(|_| usize::MAX)
+        } else {
+          usize::MAX
+        }
+      }
+      _ => usize::MAX,
     };
+    if index == usize::MAX {
+      return Ok(Value::String("Invalid index.".into()));
+    }
+
     blockchain_clone.lock().unwrap().show_block_info(index);
     Ok(Value::String(format!("Info for block {} displayed.", index)))
   });
 
+
   let blockchain_clone = blockchain.clone();
-  io.add_method("show_transactions_in_a_block", move |params: Params| {
-        match params.parse::<usize>() {
-            Ok(index) => {
-                let blockchain_guard = blockchain_clone.lock().unwrap();
-                if index < blockchain_guard.blocks.len() {
-                    let block = &blockchain_guard.blocks[index];
-                    // Construct the information string for transactions within the block.
-                    let transactions_info: String = block.transactions.iter().enumerate().map(|(tx_index, tx)| {
-                        format!("Transaction {} in Block {}:\n  TXID: {}\n  Inputs: {:?}\n  Outputs: {:?}",
-                                tx_index + 1, index, tx.txid, tx.inputs, tx.outputs)
-                    }).collect::<Vec<String>>().join("\n\n");
-
-                    // Using the jsonrpc_core::Result's Ok variant directly to avoid confusion with the standard Rust Result.
-                    Ok(Value::String(transactions_info))
-                } else {
-                    Ok(Value::String(format!("Block with index {} not found.", index)))
-                }
-            },
-            // Handling the case where parsing the block index fails.
-            Err(_) => Ok(Value::String("Invalid block index provided.".into()))
+   io.add_method("show_transactions_in_a_block", move |params: Params| {
+    let index: usize = match params {
+      Params::Array(ref arr) if arr.len() == 1 => {
+        if let Value::String(ref index_str) = arr[0] {
+          index_str.parse::<usize>().unwrap_or_else(|_| usize::MAX)
+        } else {
+          usize::MAX
         }
+      }
+      _ => usize::MAX,
+    };
+    if index == usize::MAX {
+      return Ok(Value::String("Invalid block index provided.".into()));
+    }
 
-    });
+    let blockchain_guard = blockchain_clone.lock().unwrap();
+    if index < blockchain_guard.blocks.len() {
+      let block = &blockchain_guard.blocks[index];
+      // Construct the information string for transactions within the block.
+      let transactions_info: String = block.transactions.iter().enumerate().map(|(tx_index, tx)| {
+        format!("Transaction {} in Block {}:\n  TXID: {}\n  Inputs: {:?}\n  Outputs: {:?}",
+                tx_index + 1, index, tx.txid, tx.inputs, tx.outputs)
+      }).collect::<Vec<String>>().join("\n\n");
+
+      Ok(Value::String(transactions_info))
+    } else {
+      Ok(Value::String(format!("Block with index {} not found.", index)))
+    }
+  });
 }
 
 pub fn transaction_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {

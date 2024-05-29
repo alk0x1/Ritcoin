@@ -1,7 +1,7 @@
 	
 #[tokio::main]
 async fn main() {
-  ritcoin::rpc::rpc();
+  ritcoin::cli::spawn().await;
 	// utils::print_menu();
 	// let mut option1 = String::new();
 	// let mut new_blockchain = blockchain::Blockchain::new();
