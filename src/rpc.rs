@@ -23,7 +23,6 @@ pub fn rpc() {
   server.wait();
 }
 
-
 pub fn block_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandler) {
   let blockchain_clone = blockchain.clone();
   io.add_method("insert_new_block", move |_params| {
@@ -184,4 +183,14 @@ pub fn blockchain_methods(blockchain: &Arc<Mutex<Blockchain>>, io: &mut IoHandle
         Ok(Value::String(blocks_info))
     }
   });
+
+   io.add_method("show_transactions_pool", {
+    let blockchain_clone = blockchain.clone();
+    move |_params: Params| {
+      let transactions = blockchain_clone.lock().unwrap().get_transactions_in_pool();
+      let transactions_json: Vec<Value> = transactions.iter().map(|tx| serde_json::to_value(tx).unwrap()).collect();
+      Ok(Value::Array(transactions_json))
+    }
+  });
+
 }

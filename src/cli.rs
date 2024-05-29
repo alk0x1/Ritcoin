@@ -28,6 +28,8 @@ enum Commands {
     info: bool,
     #[arg(short, long, help = "Show all blocks in the blockchain")]
     show_blocks: bool,
+   #[arg(short, long, help = "Show all transactions in the pool")]
+    pool: bool,
   },
   Block {
     #[arg(short, long)]
@@ -66,7 +68,7 @@ pub async fn spawn() {
 
   if let Some(command) = &cli.command {
     match command {
-      Commands::Blockchain { create, info, show_blocks } => handle_blockchain_commands(*create, *info, *show_blocks).await, // Start the blockchain
+      Commands::Blockchain { create, info, show_blocks, pool} => handle_blockchain_commands(*create, *info, *show_blocks, *pool).await, // Start the blockchain
       Commands::Block { insert, show_details, list_transactions } => handle_block_commands(*insert, show_details, list_transactions).await,
       Commands::Wallet { list, create, show, name } => handle_wallet_commands(*list, *create, *show, name).await,
       Commands::Transaction { create , from, to, signature, show} => handle_transactions_commands(*create, from, to, signature.clone()).await
@@ -75,7 +77,7 @@ pub async fn spawn() {
 }
 
 // handlers
-async fn handle_blockchain_commands(create: bool, info: bool, show_blocks: bool) {
+async fn handle_blockchain_commands(create: bool, info: bool, show_blocks: bool, pool: bool) {
   if create {
     rpc();
   }
@@ -84,6 +86,9 @@ async fn handle_blockchain_commands(create: bool, info: bool, show_blocks: bool)
   }
   if info {
     get_blockchain_data().await;
+  }
+  if pool {
+    show_transactions_pool().await;
   }
 }
 
@@ -181,6 +186,32 @@ async fn show_all_block_hashes() {
     }
   } else {
     println!("No result found in response.");
+  }
+}
+
+async fn show_transactions_pool() {
+  let client = reqwest::Client::new();
+  let res = client.post("http://127.0.0.1:3030")
+    .json(&serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "show_transactions_pool",
+        "params": [],
+        "id": 1
+    }))
+    .send()
+    .await
+    .expect("Failed to send request");
+
+  let response_text = res.text().await.expect("Failed to read response");
+  let response_json: serde_json::Value = serde_json::from_str(&response_text)
+    .expect("Failed to parse JSON");
+
+  if let Some(result) = response_json["result"].as_array() {
+    for transaction in result {
+      println!("{}", serde_json::to_string_pretty(transaction).unwrap());
+    }
+  } else {
+    println!("No transactions found in the pool.");
   }
 }
 
