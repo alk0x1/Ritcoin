@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::prelude::*;
 
 
-pub fn create_wallet() {
+pub fn generate_and_save_wallet() {
   let mut rng = rand::thread_rng();
   let bits = 2048;
   let priv_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
@@ -16,8 +16,8 @@ pub fn create_wallet() {
   assert_eq!(pub_key, decoded_public_key);
   assert_eq!(priv_key, decoded_private_key);
 
-  save_keys_on_file(encoded_public_key, encoded_private_key);
-  println!("Save keys on ./src/wallets");
+  save_wallet_on_file(encoded_public_key, encoded_private_key);
+  println!("Save keys on wallets");
 }
 
 pub fn encode_keys_pkcs8(pubkey: RsaPublicKey, privkey: RsaPrivateKey) -> (String, Zeroizing<String>) {
@@ -34,10 +34,10 @@ pub fn decode_keys_pkcs8(pubpem: String, privpem: Zeroizing<String>) -> (RsaPubl
   (public_key, private_key)
 }
 
-pub fn save_keys_on_file(pubkey: String, privkey: Zeroizing<String>) {
-  let mut pub_file = File::create("src/wallets/public.txt").unwrap();
-  let mut priv_file = File::create("src/wallets/secret.txt").unwrap();
-  pub_file.write_all(pubkey.as_bytes()).unwrap();
-  priv_file.write_all(privkey.as_bytes()).unwrap();
+pub fn save_wallet_on_file(pubkey: String, privkey: Zeroizing<String>) {
+  let mut pub_file = File::create("../../wallets").expect("Error creating pub key");
+  let mut priv_file = File::create("../../wallets").expect("Error writing priv key");
+  pub_file.write_all(pubkey.as_bytes()).expect("Error writing pub key");
+  priv_file.write_all(privkey.as_bytes()).expect("Error writing priv key");
 }
 

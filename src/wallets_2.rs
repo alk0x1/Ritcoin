@@ -3,7 +3,7 @@ extern crate rand;
 extern crate serde;
 use rand::{rngs::OsRng, RngCore};
 use secp256k1::{Secp256k1, SecretKey, PublicKey};
-use std::{collections::HashSet, fs::{self, File}, io::Write, path::Path};
+use std::{collections::HashSet, env, fs::{self, File}, io::Write, path::Path};
 use crate::transactions::{Input, Transaction, UTXO};
 
 
@@ -46,9 +46,18 @@ impl Wallet {
   }
 
  pub fn save(&self, filename: &str) {
-    let dir_path = Path::new("./wallets");
-    fs::create_dir_all(dir_path).expect("Failed to create wallets directory");
-    let file_path = dir_path.join(filename);
+    let mut dir_path = env::current_dir().unwrap_or_else(|err| {
+      eprintln!("Erro ao obter o caminho atual: {:?}", err);
+      std::process::exit(1);
+    });
+    println!("dir_path: {:?}", dir_path);
+
+
+    dir_path = dir_path.join("wallets");
+    fs::create_dir_all(&dir_path).expect("Failed to create wallets directory");
+    dir_path = dir_path.join(filename);
+    println!("dir_path: {:?}", dir_path);
+    
     let public_key_hex = hex::encode(self.public_key.serialize());
     let priv_key_hex = hex::encode(self.secret_key.secret_bytes());
 
@@ -58,7 +67,7 @@ impl Wallet {
       "utxos": self.utxos,
     });
 
-    let mut file = File::create(file_path).expect("Failed to create wallet file");
+    let mut file = File::create(dir_path).expect("Failed to create wallet file");
     writeln!(file, "{}", wallet_data.to_string()).expect("Failed to write wallet data");
   }
 }
